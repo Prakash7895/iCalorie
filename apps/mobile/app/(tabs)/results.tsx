@@ -1,6 +1,7 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { API_BASE_URL } from '@/constants/api';
 
 const COLORS = {
   bg: '#F6F1EA',
@@ -12,15 +13,60 @@ const COLORS = {
   line: '#E4DED6',
 };
 
-const ITEMS = [
-  { name: 'Grilled chicken', kcal: 220, portion: 'Medium' },
-  { name: 'Rice', kcal: 180, portion: 'Medium' },
-  { name: 'Broccoli', kcal: 60, portion: 'Small' },
-  { name: 'Sauce', kcal: 160, portion: 'Medium' },
-];
+type FoodItem = {
+  name: string;
+  calories?: number;
+  grams?: number;
+  protein_g?: number;
+  carbs_g?: number;
+  fat_g?: number;
+  confidence?: number;
+};
 
 export default function ResultsScreen() {
   const router = useRouter();
+  const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
+  const [items, setItems] = useState<FoodItem[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const hasImage = useMemo(() => typeof imageUri === 'string' && imageUri.length > 0, [imageUri]);
+
+  useEffect(() => {
+    const runScan = async () => {
+      if (!hasImage) return;
+      setLoading(true);
+      setErrorText(null);
+      try {
+        const form = new FormData();
+        form.append('image', {
+          uri: imageUri as string,
+          name: 'meal.jpg',
+          type: 'image/jpeg',
+        } as unknown as Blob);
+
+        const res = await fetch(`${API_BASE_URL}/scan`, {
+          method: 'POST',
+          body: form,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Scan failed: ${res.status}`);
+        }
+        const data = await res.json();
+        setItems(data.items || []);
+        setTotal(data.total_calories ?? null);
+      } catch (err: any) {
+        setErrorText(err?.message || 'Failed to scan image');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    runScan();
+  }, [hasImage, imageUri]);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Results</Text>
@@ -31,19 +77,32 @@ export default function ResultsScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>Estimated Total</Text>
-      <Text style={styles.total}>620 kcal</Text>
+      <Text style={styles.total}>{total !== null ? `${total} kcal` : '--'}</Text>
+
+      {loading ? (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator />
+          <Text style={styles.muted}>Analyzing meal...</Text>
+        </View>
+      ) : null}
+      {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
 
       <View style={styles.itemsCard}>
-        {ITEMS.map((item, idx) => (
+        {items.map((item, idx) => (
           <View key={item.name}>
             <View style={styles.row}>
               <Text style={styles.body}>{item.name}</Text>
-              <Text style={styles.muted}>{item.kcal} kcal</Text>
+              <Text style={styles.muted}>{item.calories ?? 0} kcal</Text>
             </View>
-            <Text style={styles.mutedSmall}>Portion: {item.portion}</Text>
-            {idx < ITEMS.length - 1 ? <View style={styles.divider} /> : null}
+            <Text style={styles.mutedSmall}>
+              Portion: {item.grams ? `${item.grams} g` : 'Estimate'}
+            </Text>
+            {idx < items.length - 1 ? <View style={styles.divider} /> : null}
           </View>
         ))}
+        {!items.length && !loading ? (
+          <Text style={styles.muted}>No items detected yet.</Text>
+        ) : null}
       </View>
 
       <View style={styles.actions}>
@@ -120,6 +179,14 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 12,
     marginBottom: 10,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorText: {
+    color: '#C24848',
   },
   divider: {
     height: 1,

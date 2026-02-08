@@ -1,13 +1,60 @@
+import base64
+import json
 from typing import List
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+from app.config import settings
 from app.schemas import FoodItem
 
 
 async def analyze_plate(image_bytes: bytes) -> List[FoodItem]:
-    # Placeholder for OpenAI vision + LangChain tool orchestration.
-    # Return a mocked response until the model integration is wired.
-    return [
-        FoodItem(name="Grilled chicken", grams=160, calories=220, protein_g=32, carbs_g=0, fat_g=9, confidence=0.82),
-        FoodItem(name="Rice", grams=150, calories=180, protein_g=4, carbs_g=38, fat_g=1, confidence=0.76),
-        FoodItem(name="Broccoli", grams=80, calories=60, protein_g=4, carbs_g=10, fat_g=0.5, confidence=0.74),
-        FoodItem(name="Sauce", grams=50, calories=160, protein_g=0, carbs_g=6, fat_g=14, confidence=0.62),
-    ]
+    if not settings.openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    data_url = f"data:image/jpeg;base64,{image_b64}"
+
+    prompt = (
+        "You are a nutrition estimator. Analyze the food in the photo and return a JSON object "
+        "with a top-level key `items` that is a list. Each item must include: "
+        "name, grams, calories, protein_g, carbs_g, fat_g, confidence (0-1). "
+        "If you are unsure, provide best estimates. Return ONLY JSON."
+    )
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=settings.openai_api_key)
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": data_url, "detail": "high"}},
+        ]
+    )
+
+    response = model.invoke([message])
+    raw = response.content if isinstance(response.content, str) else str(response.content)
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        # Try to recover JSON from fenced or mixed output
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start == -1 or end == -1:
+            raise
+        data = json.loads(raw[start : end + 1])
+
+    items = []
+    for item in data.get("items", []):
+        items.append(
+            FoodItem(
+                name=item.get("name", "Unknown"),
+                grams=item.get("grams"),
+                calories=item.get("calories"),
+                protein_g=item.get("protein_g"),
+                carbs_g=item.get("carbs_g"),
+                fat_g=item.get("fat_g"),
+                confidence=item.get("confidence"),
+            )
+        )
+    return items
