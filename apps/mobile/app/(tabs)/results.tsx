@@ -1,7 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { API_BASE_URL } from '@/constants/api';
+import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
   bg: '#F6F1EA',
@@ -30,8 +39,17 @@ export default function ResultsScreen() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const rise = useRef(new Animated.Value(12)).current;
 
   const hasImage = useMemo(() => typeof imageUri === 'string' && imageUri.length > 0, [imageUri]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.timing(rise, { toValue: 0, duration: 420, useNativeDriver: true }),
+    ]).start();
+  }, [fadeIn, rise]);
 
   useEffect(() => {
     const runScan = async () => {
@@ -71,13 +89,20 @@ export default function ResultsScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Results</Text>
 
-      <View style={styles.photoCard}>
+      <Animated.View
+        style={[styles.photoCard, { opacity: fadeIn, transform: [{ translateY: rise }] }]}>
         <View style={styles.photoPlaceholder} />
         <Text style={styles.photoLabel}>Meal Photo</Text>
-      </View>
+      </Animated.View>
 
       <Text style={styles.sectionTitle}>Estimated Total</Text>
-      <Text style={styles.total}>{total !== null ? `${total} kcal` : '--'}</Text>
+      <View style={styles.totalRow}>
+        <Text style={styles.total}>{total !== null ? `${total} kcal` : '--'}</Text>
+        <View style={styles.totalBadge}>
+          <Ionicons name="flash" size={14} color={COLORS.accent} />
+          <Text style={styles.totalBadgeText}>AI Estimate</Text>
+        </View>
+      </View>
 
       {loading ? (
         <View style={styles.loadingRow}>
@@ -87,7 +112,8 @@ export default function ResultsScreen() {
       ) : null}
       {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
 
-      <View style={styles.itemsCard}>
+      <Animated.View
+        style={[styles.itemsCard, { opacity: fadeIn, transform: [{ translateY: rise }] }]}>
         {items.map((item, idx) => (
           <View key={item.name}>
             <View style={styles.row}>
@@ -103,13 +129,14 @@ export default function ResultsScreen() {
         {!items.length && !loading ? (
           <Text style={styles.muted}>No items detected yet.</Text>
         ) : null}
-      </View>
+      </Animated.View>
 
       <View style={styles.actions}>
         <Pressable style={styles.secondaryButton} onPress={() => router.push('/capture')}>
           <Text style={styles.secondaryButtonText}>Edit Items</Text>
         </Pressable>
         <Pressable style={styles.primaryButton} onPress={() => router.push('/')}>
+          <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
           <Text style={styles.primaryButtonText}>Save to Log</Text>
         </Pressable>
       </View>
@@ -158,11 +185,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.accent,
   },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  totalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: COLORS.accentSoft,
+  },
+  totalBadgeText: {
+    color: COLORS.accent,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   itemsCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
     padding: 16,
     gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   row: {
     flexDirection: 'row',
@@ -205,6 +256,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     flex: 1,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   primaryButtonText: {
     color: '#FFFFFF',

@@ -13,7 +13,7 @@ async def scan_plate(image: UploadFile = File(...)):
     items = await analyze_plate(image_bytes)
     total_calories = sum(i.calories or 0 for i in items)
     key = f"uploads/{uuid.uuid4().hex}.jpg"
-    photo_url = upload_image(key, image_bytes, image.content_type or \"image/jpeg\")
+    photo_url = upload_image(key, image_bytes, image.content_type or "image/jpeg")
     return ScanResponse(items=items, total_calories=total_calories, photo_url=photo_url)
 
 

@@ -1,8 +1,9 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
   bg: '#151515',
@@ -20,6 +21,16 @@ export default function CaptureScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [autoLaunched, setAutoLaunched] = useState(false);
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.08, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulse]);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -76,20 +87,36 @@ export default function CaptureScreen() {
             <Text style={styles.permissionText}>Camera permission required</Text>
           </View>
         )}
+        <View style={styles.topBar}>
+          <Text style={styles.cameraTitle}>Capture</Text>
+          <View style={styles.topActions}>
+            <View style={styles.pillChip}>
+              <Ionicons name="flash-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.pillText}>Auto</Text>
+            </View>
+            <View style={styles.pillChip}>
+              <Ionicons name="color-filter-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.pillText}>AI</Text>
+            </View>
+          </View>
+        </View>
         {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} /> : null}
         {statusText ? <Text style={styles.guideText}>{statusText}</Text> : null}
       </View>
 
       <View style={styles.bottomBar}>
         <Pressable style={styles.sideButton} onPress={pickImage}>
+          <Ionicons name="image-outline" size={18} color="#E6E6E6" />
           <Text style={styles.sideButtonText}>Import</Text>
         </Pressable>
 
         <Pressable style={styles.captureOuter} onPress={takePhoto}>
+          <Animated.View style={[styles.capturePulse, { transform: [{ scale: pulse }] }]} />
           <View style={styles.captureInner} />
         </Pressable>
 
         <Pressable style={styles.sideButton}>
+          <Ionicons name="flash-outline" size={18} color="#E6E6E6" />
           <Text style={styles.sideButtonText}>Flash</Text>
         </Pressable>
       </View>
@@ -105,9 +132,41 @@ const styles = StyleSheet.create({
   cameraView: {
     flex: 1,
     backgroundColor: COLORS.overlay,
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
     gap: 16,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 54,
+    left: 20,
+    right: 20,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cameraTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  topActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pillChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pillText: {
+    color: '#FFFFFF',
+    fontSize: 12,
   },
   camera: {
     width: '100%',
@@ -150,6 +209,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 18,
     borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sideButtonText: {
     color: COLORS.text,
@@ -162,6 +224,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  capturePulse: {
+    position: 'absolute',
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   captureInner: {
     width: 62,
