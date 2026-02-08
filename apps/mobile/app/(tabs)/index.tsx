@@ -1,98 +1,153 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const COLORS = {
+  bg: '#F6F1EA',
+  card: '#FFFFFF',
+  text: '#1F1F1F',
+  muted: '#6D6D6D',
+  accent: '#1E7A5D',
+  accentSoft: '#E0F3EA',
+  line: '#E4DED6',
+};
 
 export default function HomeScreen() {
+  const router = useRouter();
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>iCalorie</Text>
+      <Text style={styles.subtitle}>Smart calorie vision</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <View style={styles.heroCard}>
+        <Text style={styles.heroTitle}>Track meals</Text>
+        <Text style={styles.heroTitle}>in seconds</Text>
+        <Text style={styles.heroCopy}>Scan your plate and get instant estimates</Text>
+        <Pressable style={styles.primaryButton} onPress={() => router.push('/capture')}>
+          <Text style={styles.primaryButtonText}>Scan Meal</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.summaryCard}>
+        <Text style={styles.sectionTitle}>Today</Text>
+        <Text style={styles.kcal}>1,240 kcal</Text>
+        <Text style={styles.muted}>Target 2,000 kcal</Text>
+        <Pressable style={styles.secondaryButton} onPress={() => router.push('/')}>
+          <Text style={styles.secondaryButtonText}>View log</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.sectionTitle}>Recent</Text>
+      <View style={styles.listCard}>
+        <View style={styles.row}>
+          <Text style={styles.body}>Lunch</Text>
+          <Text style={styles.muted}>520 kcal</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.row}>
+          <Text style={styles.body}>Snack</Text>
+          <Text style={styles.muted}>210 kcal</Text>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  screen: {
+    backgroundColor: COLORS.bg,
   },
-  stepContainer: {
-    gap: 8,
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.muted,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  heroCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    padding: 20,
+    gap: 6,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  heroCopy: {
+    color: COLORS.muted,
+    marginTop: 4,
+  },
+  primaryButton: {
+    marginTop: 16,
+    backgroundColor: COLORS.accent,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  summaryCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 22,
+    padding: 20,
+    gap: 6,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  kcal: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  muted: {
+    color: COLORS.muted,
+  },
+  secondaryButton: {
+    marginTop: 10,
+    backgroundColor: COLORS.accentSoft,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  secondaryButtonText: {
+    color: COLORS.accent,
+    fontWeight: '600',
+  },
+  listCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    padding: 16,
+    gap: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  body: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.line,
   },
 });
