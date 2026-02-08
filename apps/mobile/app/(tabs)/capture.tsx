@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 
 const COLORS = {
   bg: '#151515',
@@ -13,8 +14,12 @@ const COLORS = {
 
 export default function CaptureScreen() {
   const router = useRouter();
+  const { autoCamera } = useLocalSearchParams<{ autoCamera?: string }>();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [statusText, setStatusText] = useState('Center your plate in the ring');
+  const [statusText, setStatusText] = useState('');
+  const [autoLaunched, setAutoLaunched] = useState(false);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -29,37 +34,50 @@ export default function CaptureScreen() {
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setImageUri(uri);
       setStatusText('Image selected');
+      router.push({ pathname: '/results', params: { imageUri: uri } });
     }
   };
 
   const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      setStatusText('Camera permission denied');
-      return;
+    if (!cameraPermission?.granted) {
+      const perm = await requestCameraPermission();
+      if (!perm.granted) {
+        setStatusText('Camera permission denied');
+        return;
+      }
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
-      setStatusText('Photo captured');
-      router.push('/results');
+    if (!cameraRef.current) return;
+    const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+    if (photo?.uri) {
+      setImageUri(photo.uri);
+      router.push({ pathname: '/results', params: { imageUri: photo.uri } });
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (autoCamera === '1' && !autoLaunched) {
+        setAutoLaunched(true);
+        takePhoto();
+      }
+    }, [autoCamera, autoLaunched])
+  );
   return (
     <View style={styles.screen}>
       <View style={styles.cameraView}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.preview} />
+        {cameraPermission?.granted ? (
+          <CameraView ref={cameraRef} style={styles.camera} />
         ) : (
-          <View style={styles.plateRing} />
+          <View style={styles.permissionCard}>
+            <Text style={styles.permissionText}>Camera permission required</Text>
+          </View>
         )}
-        <Text style={styles.guideText}>{statusText}</Text>
+        {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} /> : null}
+        {statusText ? <Text style={styles.guideText}>{statusText}</Text> : null}
       </View>
 
       <View style={styles.bottomBar}>
@@ -91,17 +109,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
   },
-  preview: {
-    width: 320,
-    height: 320,
-    borderRadius: 20,
+  camera: {
+    width: '100%',
+    height: '100%',
   },
-  plateRing: {
-    width: 320,
-    height: 320,
-    borderRadius: 200,
-    borderWidth: 3,
-    borderColor: '#BFBFBF',
+  permissionCard: {
+    width: 260,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#232323',
+  },
+  permissionText: {
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  preview: {
+    position: 'absolute',
+    bottom: 140,
+    right: 20,
+    width: 90,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   guideText: {
     color: COLORS.text,

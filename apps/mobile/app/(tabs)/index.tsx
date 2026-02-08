@@ -23,7 +23,7 @@ export default function HomeScreen() {
         <Text style={styles.heroTitle}>Track meals</Text>
         <Text style={styles.heroTitle}>in seconds</Text>
         <Text style={styles.heroCopy}>Scan your plate and get instant estimates</Text>
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/capture')}>
+        <Pressable style={styles.primaryButton} onPress={() => router.push('/capture?autoCamera=1')}>
           <Text style={styles.primaryButtonText}>Scan Meal</Text>
         </Pressable>
       </View>
