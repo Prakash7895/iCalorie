@@ -53,7 +53,7 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Today</Text>
         <Text style={styles.kcal}>1,240 kcal</Text>
         <Text style={styles.muted}>Target 2,000 kcal</Text>
-        <Pressable style={styles.secondaryButton} onPress={() => router.push('/')}>
+        <Pressable style={styles.secondaryButton} onPress={() => router.push('/log')}>
           <Text style={styles.secondaryButtonText}>View log</Text>
         </Pressable>
       </Animated.View>

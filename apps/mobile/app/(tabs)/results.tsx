@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -7,9 +13,10 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { API_BASE_URL } from '@/constants/api';
+import { confirmScan, scanImage, saveLog } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
@@ -37,69 +44,85 @@ export default function ResultsScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const fadeIn = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(12)).current;
 
-  const hasImage = useMemo(() => typeof imageUri === 'string' && imageUri.length > 0, [imageUri]);
+  const hasImage = useMemo(
+    () => typeof imageUri === 'string' && imageUri.length > 0,
+    [imageUri]
+  );
+
+  const runScan = useCallback(async () => {
+    if (!hasImage) return;
+    setLoading(true);
+    setErrorText(null);
+    try {
+      const data = await scanImage(imageUri as string);
+      setItems(Array.isArray(data.items) ? data.items : []);
+      setTotal(
+        typeof data.total_calories === 'number' ? data.total_calories : null
+      );
+      setPhotoUrl(data.photo_url ?? null);
+    } catch (err: any) {
+      console.log(err);
+      setErrorText(err?.message || 'Failed to scan image');
+    } finally {
+      setLoading(false);
+    }
+  }, [hasImage, imageUri]);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 420, useNativeDriver: true }),
-      Animated.timing(rise, { toValue: 0, duration: 420, useNativeDriver: true }),
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 420,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rise, {
+        toValue: 0,
+        duration: 420,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [fadeIn, rise]);
 
   useEffect(() => {
-    const runScan = async () => {
-      if (!hasImage) return;
-      setLoading(true);
-      setErrorText(null);
-      try {
-        const form = new FormData();
-        form.append('image', {
-          uri: imageUri as string,
-          name: 'meal.jpg',
-          type: 'image/jpeg',
-        } as unknown as Blob);
-
-        const res = await fetch(`${API_BASE_URL}/scan`, {
-          method: 'POST',
-          body: form,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Scan failed: ${res.status}`);
-        }
-        const data = await res.json();
-        setItems(data.items || []);
-        setTotal(data.total_calories ?? null);
-      } catch (err: any) {
-        setErrorText(err?.message || 'Failed to scan image');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     runScan();
-  }, [hasImage, imageUri]);
+  }, [runScan]);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Results</Text>
 
       <Animated.View
-        style={[styles.photoCard, { opacity: fadeIn, transform: [{ translateY: rise }] }]}>
-        <View style={styles.photoPlaceholder} />
-        <Text style={styles.photoLabel}>Meal Photo</Text>
+        style={[
+          styles.photoCard,
+          { opacity: fadeIn, transform: [{ translateY: rise }] },
+        ]}
+      >
+        {hasImage ? (
+          <Image
+            source={{ uri: imageUri as string }}
+            style={styles.photoPreview}
+          />
+        ) : (
+          <View style={styles.photoPlaceholder} />
+        )}
+        <Text style={styles.photoLabel}>
+          {hasImage ? 'Meal Photo' : 'No photo'}
+        </Text>
       </Animated.View>
 
       <Text style={styles.sectionTitle}>Estimated Total</Text>
       <View style={styles.totalRow}>
-        <Text style={styles.total}>{total !== null ? `${total} kcal` : '--'}</Text>
+        <Text style={styles.total}>
+          {total !== null ? `${total} kcal` : '--'}
+        </Text>
         <View style={styles.totalBadge}>
-          <Ionicons name="flash" size={14} color={COLORS.accent} />
+          <Ionicons name='flash' size={14} color={COLORS.accent} />
           <Text style={styles.totalBadgeText}>AI Estimate</Text>
         </View>
       </View>
@@ -110,10 +133,22 @@ export default function ResultsScreen() {
           <Text style={styles.muted}>Analyzing meal...</Text>
         </View>
       ) : null}
-      {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+      {errorText ? (
+        <View style={styles.errorCard}>
+          <Ionicons name='alert-circle' size={18} color='#C24848' />
+          <Text style={styles.errorText}>{errorText}</Text>
+          <Pressable style={styles.retryButton} onPress={runScan}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <Animated.View
-        style={[styles.itemsCard, { opacity: fadeIn, transform: [{ translateY: rise }] }]}>
+        style={[
+          styles.itemsCard,
+          { opacity: fadeIn, transform: [{ translateY: rise }] },
+        ]}
+      >
         {items.map((item, idx) => (
           <View key={item.name}>
             <View style={styles.row}>
@@ -132,11 +167,35 @@ export default function ResultsScreen() {
       </Animated.View>
 
       <View style={styles.actions}>
-        <Pressable style={styles.secondaryButton} onPress={() => router.push('/capture')}>
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() => router.push('/capture')}
+        >
           <Text style={styles.secondaryButtonText}>Edit Items</Text>
         </Pressable>
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/')}>
-          <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+        <Pressable
+          style={styles.primaryButton}
+          onPress={async () => {
+            try {
+              setLoading(true);
+              setErrorText(null);
+              const confirmed = await confirmScan(items, photoUrl ?? undefined);
+              await saveLog({
+                items: confirmed.items,
+                total_calories: confirmed.total_calories ?? null,
+                photo_url: confirmed.photo_url ?? null,
+                created_at: new Date().toISOString(),
+              });
+              router.push('/');
+            } catch (err: any) {
+              setErrorText(err?.message || 'Failed to save log');
+            } finally {
+              setLoading(false);
+            }
+          }}
+          disabled={loading}
+        >
+          <Ionicons name='checkmark-circle' size={18} color='#FFFFFF' />
           <Text style={styles.primaryButtonText}>Save to Log</Text>
         </Pressable>
       </View>
@@ -171,6 +230,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.line,
     backgroundColor: '#FAFAFA',
+  },
+  photoPreview: {
+    height: 180,
+    borderRadius: 14,
   },
   photoLabel: {
     color: COLORS.muted,
@@ -238,6 +301,26 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#C24848',
+  },
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#FDECEC',
+  },
+  retryButton: {
+    marginLeft: 'auto',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#C24848',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 12,
   },
   divider: {
     height: 1,

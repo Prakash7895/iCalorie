@@ -31,8 +31,10 @@ async def analyze_plate(image_bytes: bytes) -> List[FoodItem]:
         ]
     )
 
-    response = model.invoke([message])
-    raw = response.content if isinstance(response.content, str) else str(response.content)
+    response = await model.ainvoke([message])
+    raw = (
+        response.content if isinstance(response.content, str) else str(response.content)
+    )
 
     try:
         data = json.loads(raw)
