@@ -49,6 +49,7 @@ export default function ResultsScreen() {
   const [errorText, setErrorText] = useState<string | null>(null);
   const fadeIn = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(12)).current;
+  const shimmer = useRef(new Animated.Value(0)).current;
 
   const hasImage = useMemo(
     () => typeof imageUri === 'string' && imageUri.length > 0,
@@ -87,6 +88,20 @@ export default function ResultsScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, [fadeIn, rise]);
 
   useEffect(() => {
@@ -121,10 +136,28 @@ export default function ResultsScreen() {
         <Text style={styles.total}>
           {total !== null ? `${total} kcal` : '--'}
         </Text>
-        <View style={styles.totalBadge}>
+        <Animated.View
+          style={[
+            styles.totalBadge,
+            {
+              opacity: shimmer.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.6, 1],
+              }),
+              transform: [
+                {
+                  scale: shimmer.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.98, 1.03],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <Ionicons name='flash' size={14} color={COLORS.accent} />
           <Text style={styles.totalBadgeText}>AI Estimate</Text>
-        </View>
+        </Animated.View>
       </View>
 
       {loading ? (

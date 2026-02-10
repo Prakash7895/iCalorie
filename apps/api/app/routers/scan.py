@@ -1,16 +1,26 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form, Depends
 import uuid
 from app.schemas import ScanResponse, ScanConfirmRequest, LogRequest
 from app.services.vision import analyze_plate
+from app.db import get_db
+from app.models import MealLog
+from sqlalchemy.orm import Session
 from app.services.storage import upload_image
 
 router = APIRouter(prefix="/scan", tags=["scan"])
 
 
 @router.post("", response_model=ScanResponse)
-async def scan_plate(image: UploadFile = File(...)):
+async def scan_plate(
+    image: UploadFile = File(...),
+    plate_size_cm: float | None = Form(None),
+    db: Session = Depends(get_db),
+):
     image_bytes = await image.read()
-    items = await analyze_plate(image_bytes)
+    if plate_size_cm is None:
+        last = db.query(MealLog).order_by(MealLog.created_at.desc()).first()
+        plate_size_cm = last.plate_size_cm if last and last.plate_size_cm else 27.0
+    items = await analyze_plate(image_bytes, plate_size_cm=plate_size_cm)
     total_calories = sum(i.calories or 0 for i in items)
     key = f"uploads/{uuid.uuid4().hex}.jpg"
     photo_url = upload_image(key, image_bytes, image.content_type or "image/jpeg")

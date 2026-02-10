@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getLog } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,12 +23,16 @@ export default function LogScreen() {
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogItem[]>([]);
+  const spin = useRef(new Animated.Value(0)).current;
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const fetchLog = useCallback(async () => {
     setLoading(true);
     setErrorText(null);
+    Animated.timing(spin, { toValue: 1, duration: 600, useNativeDriver: true }).start(() => {
+      spin.setValue(0);
+    });
     try {
       const data = await getLog(today);
       setLogs(Array.isArray(data.items) ? data.items : []);
@@ -48,7 +52,19 @@ export default function LogScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Today</Text>
         <Pressable style={styles.refresh} onPress={fetchLog}>
-          <Ionicons name="refresh" size={18} color={COLORS.accent} />
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  rotate: spin.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+              ],
+            }}>
+            <Ionicons name="refresh" size={18} color={COLORS.accent} />
+          </Animated.View>
         </Pressable>
       </View>
 
@@ -122,6 +138,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.line,
   },
   logCard: {
     backgroundColor: COLORS.card,

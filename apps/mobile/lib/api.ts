@@ -23,13 +23,16 @@ export type LogRequest = {
   created_at?: string;
 };
 
-export async function scanImage(imageUri: string): Promise<ScanResponse> {
+export async function scanImage(imageUri: string, plateSizeCm?: number): Promise<ScanResponse> {
   const form = new FormData();
   form.append('image', {
     uri: imageUri,
     name: 'meal.jpg',
     type: 'image/jpeg',
   } as unknown as Blob);
+  if (plateSizeCm) {
+    form.append('plate_size_cm', String(plateSizeCm));
+  }
 
   const res = await fetch(`${API_BASE_URL}/scan`, {
     method: 'POST',

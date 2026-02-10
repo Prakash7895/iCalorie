@@ -13,3 +13,4 @@ class MealLog(Base):
     total_calories = Column(Float, nullable=True)
     photo_url = Column(String, nullable=True)
     items = Column(JSON, nullable=True)
+    plate_size_cm = Column(Float, nullable=True)

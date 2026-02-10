@@ -23,6 +23,7 @@ async def create_log(payload: LogRequest, db: Session = Depends(get_db)):
         total_calories=payload.total_calories,
         photo_url=payload.photo_url,
         items=[item.model_dump() for item in payload.items],
+        plate_size_cm=payload.plate_size_cm,
     )
     db.add(log)
     db.commit()
@@ -45,6 +46,7 @@ async def get_log(date: Optional[str] = None, db: Session = Depends(get_db)):
                 "items": row.items or [],
                 "total_calories": row.total_calories,
                 "photo_url": row.photo_url,
+                "plate_size_cm": row.plate_size_cm,
                 "created_at": row.created_at.isoformat(),
             }
         )

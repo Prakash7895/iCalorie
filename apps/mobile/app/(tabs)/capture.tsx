@@ -21,7 +21,9 @@ export default function CaptureScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [autoLaunched, setAutoLaunched] = useState(false);
+  const [showCalibrationPrompt, setShowCalibrationPrompt] = useState(true);
   const pulse = useRef(new Animated.Value(1)).current;
+  const spin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
@@ -29,6 +31,9 @@ export default function CaptureScreen() {
         Animated.timing(pulse, { toValue: 1.08, duration: 900, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
       ])
+    ).start();
+    Animated.loop(
+      Animated.timing(spin, { toValue: 1, duration: 4000, useNativeDriver: true })
     ).start();
   }, [pulse]);
 
@@ -42,6 +47,7 @@ export default function CaptureScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
+      selectionLimit: 1,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
@@ -87,6 +93,23 @@ export default function CaptureScreen() {
             <Text style={styles.permissionText}>Camera permission required</Text>
           </View>
         )}
+        {showCalibrationPrompt ? (
+          <View style={styles.calibrationCard}>
+            <Text style={styles.calibrationTitle}>For most accurate results</Text>
+            <Text style={styles.calibrationText}>
+              Place a printed calibration card, a credit card, or a phone on the plate. Keep the
+              full plate in frame. This improves portion estimates.
+            </Text>
+            <Pressable
+              style={styles.calibrationButton}
+              onPress={() => setShowCalibrationPrompt(false)}>
+              <Text style={styles.calibrationButtonText}>Got it</Text>
+            </Pressable>
+            <Text style={styles.calibrationHint}>
+              If you skip, we’ll use a standard plate size or your last plate size.
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.topBar}>
           <Text style={styles.cameraTitle}>Capture</Text>
           <View style={styles.topActions}>
@@ -100,6 +123,22 @@ export default function CaptureScreen() {
             </View>
           </View>
         </View>
+        <Animated.View
+          style={[
+            styles.radarRing,
+            {
+              transform: [
+                { scale: pulse },
+                {
+                  rotate: spin.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
         {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} /> : null}
         {statusText ? <Text style={styles.guideText}>{statusText}</Text> : null}
       </View>
@@ -115,10 +154,7 @@ export default function CaptureScreen() {
           <View style={styles.captureInner} />
         </Pressable>
 
-        <Pressable style={styles.sideButton}>
-          <Ionicons name="flash-outline" size={18} color="#E6E6E6" />
-          <Text style={styles.sideButtonText}>Flash</Text>
-        </Pressable>
+        <View style={styles.sideButtonGhost} />
       </View>
     </View>
   );
@@ -155,6 +191,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  calibrationCard: {
+    position: 'absolute',
+    top: 120,
+    left: 16,
+    right: 16,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    zIndex: 3,
+    gap: 8,
+  },
+  calibrationTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  calibrationText: {
+    color: '#EAEAEA',
+    fontSize: 13,
+  },
+  calibrationButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  calibrationButtonText: {
+    color: '#111111',
+    fontWeight: '600',
+  },
+  calibrationHint: {
+    color: '#CFCFCF',
+    fontSize: 11,
+  },
   pillChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -171,6 +242,16 @@ const styles = StyleSheet.create({
   camera: {
     width: '100%',
     height: '100%',
+  },
+  radarRing: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderStyle: 'dashed',
+    alignSelf: 'center',
   },
   permissionCard: {
     width: 260,
@@ -212,6 +293,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  sideButtonGhost: {
+    width: 86,
+    height: 44,
   },
   sideButtonText: {
     color: COLORS.text,
