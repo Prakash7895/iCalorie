@@ -7,19 +7,23 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -37,13 +41,91 @@ export default function ProfileScreen() {
       return;
     }
 
-    const userData = await storage.getUserData();
-    if (userData) {
-      userData.name = name;
-      await storage.setUserData(userData);
-      setUser(userData);
+    try {
+      const token = await storage.getAuthToken();
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      const updatedUser = await response.json();
+      await storage.setUserData(updatedUser);
+      setUser(updatedUser);
       setEditingName(false);
       Alert.alert('Success', 'Name updated successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update name. Please try again.');
+      console.error(error);
+    }
+  };
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant photo library access');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await uploadProfilePicture(result.assets[0].uri);
+    }
+  };
+
+  const uploadProfilePicture = async (uri: string) => {
+    try {
+      const token = await storage.getAuthToken();
+      const formData = new FormData();
+
+      // Get filename from URI
+      const filename = uri.split('/').pop() || 'profile.jpg';
+
+      formData.append('file', {
+        uri,
+        name: filename,
+        type: 'image/jpeg',
+      } as any);
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile-picture`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to upload profile picture');
+      }
+
+      const updatedUser = await response.json();
+      await storage.setUserData(updatedUser);
+      setUser(updatedUser);
+      Alert.alert('Success', 'Profile picture updated!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to upload profile picture');
+      console.error(error);
     }
   };
 
@@ -82,9 +164,16 @@ export default function ProfileScreen() {
           style={styles.avatarSection}
         >
           <View style={styles.avatarLarge}>
-            <Ionicons name='person' size={64} color={COLORS.white} />
+            {user?.profile_picture_url ? (
+              <Image
+                source={{ uri: user.profile_picture_url }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Ionicons name='person' size={64} color={COLORS.white} />
+            )}
           </View>
-          <Pressable style={styles.editAvatarBtn}>
+          <Pressable style={styles.editAvatarBtn} onPress={handlePickImage}>
             <Ionicons name='camera' size={20} color={COLORS.accent} />
           </Pressable>
         </Animated.View>
@@ -150,7 +239,10 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
 
-          <Pressable style={styles.settingCard}>
+          <Pressable
+            style={styles.settingCard}
+            onPress={() => setShowPasswordModal(true)}
+          >
             <View style={styles.settingIcon}>
               <Ionicons
                 name='lock-closed-outline'
@@ -203,6 +295,13 @@ export default function ProfileScreen() {
           </Pressable>
         </Animated.View>
       </ScrollView>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        visible={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={() => {}}
+      />
     </View>
   );
 }
@@ -214,8 +313,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.accent,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -252,6 +351,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.medium,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   editAvatarBtn: {
     position: 'absolute',

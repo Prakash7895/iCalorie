@@ -6,6 +6,7 @@ import {
   View,
   RefreshControl,
   Pressable,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 export default function HomeScreen() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>('');
+  const [user, setUser] = useState<any>(null);
   const [totalToday, setTotalToday] = useState(0);
   const [recentMeals, setRecentMeals] = useState<
     { name: string; kcal: number }[]
@@ -29,6 +31,7 @@ export default function HomeScreen() {
 
   const fetchUserData = async () => {
     const userData = await storage.getUserData();
+    setUser(userData);
     if (userData?.name) {
       setUserName(userData.name);
     } else if (userData?.email) {
@@ -92,9 +95,19 @@ export default function HomeScreen() {
               Let's track your nutrition today
             </Text>
           </View>
-          <Pressable style={styles.avatarContainer} onPress={() => {}}>
+          <Pressable
+            style={styles.avatarContainer}
+            onPress={() => router.push('/profile')}
+          >
             <View style={styles.avatar}>
-              <Ionicons name='person' size={24} color={COLORS.white} />
+              {userName && user?.profile_picture_url ? (
+                <Image
+                  source={{ uri: user.profile_picture_url }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Ionicons name='person' size={24} color={COLORS.white} />
+              )}
             </View>
           </Pressable>
         </View>
@@ -276,5 +289,9 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     marginTop: 20,
     fontStyle: 'italic',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
 });

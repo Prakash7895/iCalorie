@@ -1,18 +1,53 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List
 
 
+# Auth Schemas
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+    name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    name: Optional[str]
+    profile_picture_url: Optional[str] = None
+    created_at: str
+
+    class Config:
+        from_attributes = True
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserResponse
+
+
+class UpdateProfileRequest(BaseModel):
+    name: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=6)
+
+
+# Food & Nutrition Schemas
 class FoodItem(BaseModel):
-    name: str  # Display name (GPT)
-    normalized_name: Optional[str] = None  # USDA name
-    portion: Optional[str] = None  # "1 cup"
-    estimated_grams: Optional[float] = None
+    name: str
+    grams: Optional[float] = None
     calories: Optional[float] = None
     protein_g: Optional[float] = None
     carbs_g: Optional[float] = None
     fat_g: Optional[float] = None
     confidence: Optional[float] = None
-    notes: Optional[str] = None
 
 
 class ScanResponse(BaseModel):
@@ -32,27 +67,3 @@ class LogRequest(BaseModel):
     photo_url: Optional[str] = None
     created_at: Optional[str] = None
     plate_size_cm: Optional[float] = None
-
-
-# Auth Schemas
-class SignupRequest(BaseModel):
-    email: str
-    password: str
-    name: Optional[str] = None
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class UserResponse(BaseModel):
-    id: int
-    email: str
-    name: Optional[str] = None
-    created_at: str
-
-
-class AuthResponse(BaseModel):
-    token: str
-    user: UserResponse
