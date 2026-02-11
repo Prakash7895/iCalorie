@@ -3,15 +3,16 @@ from typing import List, Optional
 
 
 class FoodItem(BaseModel):
-    name: str
-    grams: Optional[float] = None
+    name: str  # Display name (GPT)
+    normalized_name: Optional[str] = None  # USDA name
+    portion: Optional[str] = None  # "1 cup"
+    estimated_grams: Optional[float] = None
     calories: Optional[float] = None
     protein_g: Optional[float] = None
     carbs_g: Optional[float] = None
     fat_g: Optional[float] = None
     confidence: Optional[float] = None
-    area_ratio: Optional[float] = None
-    food_category: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class ScanResponse(BaseModel):

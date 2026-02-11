@@ -11,15 +11,14 @@ router = APIRouter(prefix="/scan", tags=["scan"])
 
 
 @router.post("", response_model=ScanResponse)
+@router.post("", response_model=ScanResponse)
 async def scan_plate(
     image: UploadFile = File(...),
     plate_size_cm: float | None = Form(None),
     db: Session = Depends(get_db),
 ):
     image_bytes = await image.read()
-    if plate_size_cm is None:
-        last = db.query(MealLog).order_by(MealLog.created_at.desc()).first()
-        plate_size_cm = last.plate_size_cm if last and last.plate_size_cm else 27.0
+    # Note: plate_size_cm is now optional/fallback as we use portion estimation
     items = await analyze_plate(image_bytes, plate_size_cm=plate_size_cm)
     total_calories = sum(i.calories or 0 for i in items)
     key = f"uploads/{uuid.uuid4().hex}.jpg"
@@ -30,7 +29,9 @@ async def scan_plate(
 @router.post("/confirm", response_model=ScanResponse)
 async def confirm_scan(payload: ScanConfirmRequest):
     total_calories = sum(i.calories or 0 for i in payload.items)
-    return ScanResponse(items=payload.items, total_calories=total_calories, photo_url=payload.photo_url)
+    return ScanResponse(
+        items=payload.items, total_calories=total_calories, photo_url=payload.photo_url
+    )
 
 
 @router.post("/log")

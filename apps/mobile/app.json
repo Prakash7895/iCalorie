@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan meals for calorie estimation.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photos to let you choose meal images for analysis."
+      }
     },
     "android": {
       "adaptiveIcon": {

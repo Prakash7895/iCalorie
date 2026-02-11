@@ -1,327 +1,339 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { COLORS } from '@/constants/colors';
+import { Button } from '@/components/ui/Button';
 
-const COLORS = {
-  bg: '#151515',
-  overlay: '#1B1B1B',
-  text: '#DCDCDC',
-  button: '#333333',
-  white: '#FFFFFF',
-};
+const { width } = Dimensions.get('window');
 
 export default function CaptureScreen() {
   const router = useRouter();
   const { autoCamera } = useLocalSearchParams<{ autoCamera?: string }>();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [statusText, setStatusText] = useState('');
   const [autoLaunched, setAutoLaunched] = useState(false);
-  const [showCalibrationPrompt, setShowCalibrationPrompt] = useState(true);
-  const pulse = useRef(new Animated.Value(1)).current;
-  const spin = useRef(new Animated.Value(0)).current;
+  const [isCapturing, setIsCapturing] = useState(false);
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ])
-    ).start();
-    Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 4000, useNativeDriver: true })
-    ).start();
-  }, [pulse]);
+  // Animation values
+  const focusScale = useSharedValue(1.2);
+  const focusOpacity = useSharedValue(0.5);
+
+  useFocusEffect(
+    useCallback(() => {
+      // Breathing animation for focus ring
+      focusScale.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1000 }),
+          withTiming(1.1, { duration: 1000 })
+        ),
+        -1,
+        true
+      );
+      focusOpacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1000 }),
+          withTiming(0.6, { duration: 1000 })
+        ),
+        -1,
+        true
+      );
+
+      if (autoCamera === '1' && !autoLaunched) {
+        setAutoLaunched(true);
+        // Small delay to ensure camera is ready
+        setTimeout(() => takePhoto(), 500);
+      }
+    }, [autoCamera, autoLaunched])
+  );
+
+  const focusStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: focusScale.value }],
+    opacity: focusOpacity.value,
+  }));
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setStatusText('Media library permission denied');
-      return;
-    }
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        alert('Permission to access gallery is required.');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      selectionLimit: 1,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+        selectionLimit: 1,
+        legacy: true, // Use older intent for emulator compatibility
+      });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      const uri = result.assets[0].uri;
-      setImageUri(uri);
-      setStatusText('Image selected');
-      router.push({ pathname: '/results', params: { imageUri: uri } });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        router.push({
+          pathname: '/results',
+          params: { imageUri: result.assets[0].uri },
+        });
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      // Check for specific Android crash
+      if (
+        error instanceof Error &&
+        error.message.includes('ActivityNotFoundException')
+      ) {
+        alert(
+          'Gallery app not found. Please install Google Photos or Files app.'
+        );
+      } else {
+        alert('Failed to open gallery.');
+      }
     }
   };
 
   const takePhoto = async () => {
+    if (!cameraRef.current) return;
+
     if (!cameraPermission?.granted) {
-      const perm = await requestCameraPermission();
-      if (!perm.granted) {
-        setStatusText('Camera permission denied');
+      const permission = await requestCameraPermission();
+      if (!permission.granted) {
+        alert('Permission to access camera is required.');
         return;
       }
     }
 
-    if (!cameraRef.current) return;
-    const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-    if (photo?.uri) {
-      setImageUri(photo.uri);
-      router.push({ pathname: '/results', params: { imageUri: photo.uri } });
+    try {
+      setIsCapturing(true);
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+      });
+
+      if (photo?.uri) {
+        router.push({
+          pathname: '/results',
+          params: { imageUri: photo.uri },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to take photo:', error);
+      alert('Failed to capture photo');
+    } finally {
+      setIsCapturing(false);
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      if (autoCamera === '1' && !autoLaunched) {
-        setAutoLaunched(true);
-        takePhoto();
-      }
-    }, [autoCamera, autoLaunched])
-  );
   return (
-    <View style={styles.screen}>
-      <View style={styles.cameraView}>
-        {cameraPermission?.granted ? (
-          <CameraView ref={cameraRef} style={styles.camera} />
-        ) : (
-          <View style={styles.permissionCard}>
-            <Text style={styles.permissionText}>Camera permission required</Text>
-          </View>
-        )}
-        {showCalibrationPrompt ? (
-          <View style={styles.calibrationCard}>
-            <Text style={styles.calibrationTitle}>For most accurate results</Text>
-            <Text style={styles.calibrationText}>
-              Place a printed calibration card, a credit card, or a phone on the plate. Keep the
-              full plate in frame. This improves portion estimates.
-            </Text>
-            <Pressable
-              style={styles.calibrationButton}
-              onPress={() => setShowCalibrationPrompt(false)}>
-              <Text style={styles.calibrationButtonText}>Got it</Text>
-            </Pressable>
-            <Text style={styles.calibrationHint}>
-              If you skip, we’ll use a standard plate size or your last plate size.
-            </Text>
-          </View>
-        ) : null}
-        <View style={styles.topBar}>
-          <Text style={styles.cameraTitle}>Capture</Text>
-          <View style={styles.topActions}>
-            <View style={styles.pillChip}>
-              <Ionicons name="flash-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.pillText}>Auto</Text>
-            </View>
-            <View style={styles.pillChip}>
-              <Ionicons name="color-filter-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.pillText}>AI</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle='light-content' />
+      <CameraView ref={cameraRef} style={styles.camera} facing='back' />
+
+      {/* Overlays positioned absolutely over the camera */}
+      <View style={styles.overlayContainer}>
+        {/* Top Overlay */}
+        <BlurView intensity={20} tint='dark' style={styles.topBar}>
+          <View style={styles.pillContainer}>
+            <View style={styles.activePill}>
+              <Text style={styles.activePillText}>AI SCANNER</Text>
             </View>
           </View>
+        </BlurView>
+
+        {/* Focus Ring */}
+        <View style={styles.focusContainer}>
+          <Animated.View style={[styles.focusRing, focusStyle]} />
+          <View style={[styles.corner, styles.tl]} />
+          <View style={[styles.corner, styles.tr]} />
+          <View style={[styles.corner, styles.bl]} />
+          <View style={[styles.corner, styles.br]} />
         </View>
-        <Animated.View
-          style={[
-            styles.radarRing,
-            {
-              transform: [
-                { scale: pulse },
-                {
-                  rotate: spin.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '360deg'],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-        {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} /> : null}
-        {statusText ? <Text style={styles.guideText}>{statusText}</Text> : null}
-      </View>
 
-      <View style={styles.bottomBar}>
-        <Pressable style={styles.sideButton} onPress={pickImage}>
-          <Ionicons name="image-outline" size={18} color="#E6E6E6" />
-          <Text style={styles.sideButtonText}>Import</Text>
-        </Pressable>
+        <Text style={styles.hintText}>Center your meal</Text>
 
-        <Pressable style={styles.captureOuter} onPress={takePhoto}>
-          <Animated.View style={[styles.capturePulse, { transform: [{ scale: pulse }] }]} />
-          <View style={styles.captureInner} />
-        </Pressable>
+        {/* Bottom Controls */}
+        <View style={styles.bottomControls}>
+          <Button
+            variant='icon'
+            icon='images-outline'
+            onPress={pickImage}
+            style={styles.galleryBtn}
+          />
 
-        <View style={styles.sideButtonGhost} />
+          <View style={styles.captureContainer}>
+            <Button
+              onPress={takePhoto}
+              style={styles.captureBtn}
+              loading={isCapturing}
+            >
+              <View style={styles.innerCapture} />
+            </Button>
+          </View>
+
+          <View style={styles.placeholderBtn} />
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'black',
   },
-  cameraView: {
-    flex: 1,
-    backgroundColor: COLORS.overlay,
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  topBar: {
-    position: 'absolute',
-    top: 54,
-    left: 20,
-    right: 20,
-    zIndex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
-  cameraTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  topActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  calibrationCard: {
-    position: 'absolute',
-    top: 120,
-    left: 16,
-    right: 16,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    zIndex: 3,
-    gap: 8,
-  },
-  calibrationTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  calibrationText: {
-    color: '#EAEAEA',
-    fontSize: 13,
-  },
-  calibrationButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  calibrationButtonText: {
-    color: '#111111',
-    fontWeight: '600',
-  },
-  calibrationHint: {
-    color: '#CFCFCF',
-    fontSize: 11,
-  },
-  pillChip: {
-    flexDirection: 'row',
+  centerContent: {
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  pillText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-  },
-  camera: {
-    width: '100%',
-    height: '100%',
-  },
-  radarRing: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
-    borderStyle: 'dashed',
-    alignSelf: 'center',
-  },
-  permissionCard: {
-    width: 260,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#232323',
+    backgroundColor: COLORS.bg,
+    gap: 20,
+    padding: 20,
   },
   permissionText: {
-    color: COLORS.text,
+    fontSize: 16,
+    color: COLORS.secondary,
     textAlign: 'center',
   },
-  preview: {
+  camera: {
+    flex: 1,
+  },
+  topBar: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  pillContainer: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 4,
+  },
+  activePill: {
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  activePillText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  focusContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  focusRing: {
+    width: width * 0.7,
+    height: width * 0.7,
+    borderRadius: width * 0.35,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderStyle: 'dashed',
+  },
+  corner: {
     position: 'absolute',
-    bottom: 140,
-    right: 20,
-    width: 90,
-    height: 120,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: 40,
+    height: 40,
+    borderColor: 'white',
+    borderWidth: 4,
   },
-  guideText: {
-    color: COLORS.text,
-    fontSize: 14,
+  tl: {
+    top: '25%',
+    left: '15%',
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 16,
   },
-  bottomBar: {
-    height: 130,
-    backgroundColor: '#0E0E0E',
-    paddingHorizontal: 28,
+  tr: {
+    top: '25%',
+    right: '15%',
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 16,
+  },
+  bl: {
+    bottom: '25%',
+    left: '15%',
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 16,
+  },
+  br: {
+    bottom: '25%',
+    right: '15%',
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 16,
+  },
+  hintText: {
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 40,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  bottomControls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 40,
+    paddingBottom: 60,
   },
-  sideButton: {
-    backgroundColor: COLORS.button,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  galleryBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
-  sideButtonGhost: {
-    width: 86,
-    height: 44,
-  },
-  sideButtonText: {
-    color: COLORS.text,
-  },
-  captureOuter: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+  captureContainer: {
     borderWidth: 4,
-    borderColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 50,
+    padding: 4,
   },
-  capturePulse: {
-    position: 'absolute',
-    width: 92,
-    height: 92,
-    borderRadius: 46,
+  captureBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'white',
+    padding: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  innerCapture: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'white',
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: '#CCC',
   },
-  captureInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: COLORS.white,
+  placeholderBtn: {
+    width: 50,
   },
 });

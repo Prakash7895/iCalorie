@@ -1,32 +1,43 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  Image,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { confirmScan, scanImage, saveLog } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
+import { confirmScan, scanImage, saveLog } from '@/lib/api';
+import { BlurView } from 'expo-blur';
+
+const { width } = Dimensions.get('window');
 
 const COLORS = {
-  bg: '#F6F1EA',
-  card: '#FFFFFF',
-  text: '#1F1F1F',
-  muted: '#6D6D6D',
-  accent: '#1E7A5D',
-  accentSoft: '#E0F3EA',
-  line: '#E4DED6',
+  bg: '#F8F9FA',
+  surface: '#FFFFFF',
+  primary: '#2D3436', // Dark elegant text
+  secondary: '#636E72', // Muted text
+  accent: '#00B894', // Minty fresh
+  error: '#FF7675',
+  border: '#DFE6E9',
+  shadow: '#2D3436',
 };
 
 type FoodItem = {
@@ -47,19 +58,28 @@ export default function ResultsScreen() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const rise = useRef(new Animated.Value(12)).current;
-  const shimmer = useRef(new Animated.Value(0)).current;
 
-  const hasImage = useMemo(
-    () => typeof imageUri === 'string' && imageUri.length > 0,
-    [imageUri]
-  );
+  // Animation values
+  const scanLineY = useSharedValue(0);
+  const totalScale = useSharedValue(1);
+
+  const hasImage = typeof imageUri === 'string' && imageUri.length > 0;
 
   const runScan = useCallback(async () => {
     if (!hasImage) return;
     setLoading(true);
     setErrorText(null);
+
+    // Start scanning animation
+    scanLineY.value = withRepeat(
+      withSequence(
+        withTiming(0, { duration: 0 }),
+        withTiming(250, { duration: 1500, easing: Easing.linear })
+      ),
+      -1,
+      false
+    );
+
     try {
       const data = await scanImage(imageUri as string);
       setItems(Array.isArray(data.items) ? data.items : []);
@@ -67,329 +87,482 @@ export default function ResultsScreen() {
         typeof data.total_calories === 'number' ? data.total_calories : null
       );
       setPhotoUrl(data.photo_url ?? null);
+
+      // Success animation pulse
+      totalScale.value = withSequence(withSpring(1.2), withSpring(1));
     } catch (err: any) {
       console.log(err);
       setErrorText(err?.message || 'Failed to scan image');
     } finally {
       setLoading(false);
+      scanLineY.value = withTiming(0); // Reset scan line
     }
-  }, [hasImage, imageUri]);
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeIn, {
-        toValue: 1,
-        duration: 420,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rise, {
-        toValue: 0,
-        duration: 420,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmer, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmer, {
-          toValue: 0,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [fadeIn, rise]);
+  }, [hasImage, imageUri, scanLineY, totalScale]);
 
   useEffect(() => {
     runScan();
   }, [runScan]);
 
+  const animatedScanLineStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scanLineY.value }],
+    opacity: loading ? 1 : 0,
+  }));
+
+  const animatedTotalStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: totalScale.value }],
+  }));
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setErrorText(null);
+      const confirmed = await confirmScan(items, photoUrl ?? undefined);
+      await saveLog({
+        items: confirmed.items,
+        total_calories: confirmed.total_calories ?? null,
+        photo_url: confirmed.photo_url ?? null,
+        created_at: new Date().toISOString(),
+      });
+      router.push('/');
+    } catch (err: any) {
+      setErrorText(err?.message || 'Failed to save log');
+      setLoading(false);
+    }
+  };
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Results</Text>
-
-      <Animated.View
-        style={[
-          styles.photoCard,
-          { opacity: fadeIn, transform: [{ translateY: rise }] },
-        ]}
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {hasImage ? (
-          <Image
-            source={{ uri: imageUri as string }}
-            style={styles.photoPreview}
-          />
-        ) : (
-          <View style={styles.photoPlaceholder} />
-        )}
-        <Text style={styles.photoLabel}>
-          {hasImage ? 'Meal Photo' : 'No photo'}
-        </Text>
-      </Animated.View>
-
-      <Text style={styles.sectionTitle}>Estimated Total</Text>
-      <View style={styles.totalRow}>
-        <Text style={styles.total}>
-          {total !== null ? `${total} kcal` : '--'}
-        </Text>
+        {/* Header Image Section */}
         <Animated.View
-          style={[
-            styles.totalBadge,
-            {
-              opacity: shimmer.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.6, 1],
-              }),
-              transform: [
-                {
-                  scale: shimmer.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.98, 1.03],
-                  }),
-                },
-              ],
-            },
-          ]}
+          entering={FadeIn.duration(600)}
+          style={styles.imageContainer}
         >
-          <Ionicons name='flash' size={14} color={COLORS.accent} />
-          <Text style={styles.totalBadgeText}>AI Estimate</Text>
-        </Animated.View>
-      </View>
+          {hasImage ? (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
 
-      {loading ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator />
-          <Text style={styles.muted}>Analyzing meal...</Text>
-        </View>
-      ) : null}
-      {errorText ? (
-        <View style={styles.errorCard}>
-          <Ionicons name='alert-circle' size={18} color='#C24848' />
-          <Text style={styles.errorText}>{errorText}</Text>
-          <Pressable style={styles.retryButton} onPress={runScan}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </Pressable>
-        </View>
-      ) : null}
+              {/* Scanning Overlay */}
+              {loading && (
+                <View style={styles.scanOverlay}>
+                  <Animated.View
+                    style={[styles.scanLine, animatedScanLineStyle]}
+                  />
+                  <View style={styles.scanGlitch} />
+                </View>
+              )}
 
-      <Animated.View
-        style={[
-          styles.itemsCard,
-          { opacity: fadeIn, transform: [{ translateY: rise }] },
-        ]}
-      >
-        {items.map((item, idx) => (
-          <View key={item.name}>
-            <View style={styles.row}>
-              <Text style={styles.body}>{item.name}</Text>
-              <Text style={styles.muted}>{item.calories ?? 0} kcal</Text>
+              {/* Status Badge */}
+              <View style={styles.statusBadge}>
+                {loading ? (
+                  <View style={styles.analyzingTag}>
+                    <ActivityIndicator size='small' color='#FFF' />
+                    <Text style={styles.statusText}>Analyzing...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.successTag}>
+                    <Ionicons name='sparkles' size={14} color='#FFF' />
+                    <Text style={styles.statusText}>AI Analysis Complete</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            <Text style={styles.mutedSmall}>
-              Portion: {item.grams ? `${item.grams} g` : 'Estimate'}
-            </Text>
-            {idx < items.length - 1 ? <View style={styles.divider} /> : null}
-          </View>
-        ))}
-        {!items.length && !loading ? (
-          <Text style={styles.muted}>No items detected yet.</Text>
-        ) : null}
-      </Animated.View>
+          ) : (
+            <View style={styles.placeholder}>
+              <Ionicons
+                name='image-outline'
+                size={48}
+                color={COLORS.secondary}
+              />
+              <Text style={styles.placeholderText}>No image selected</Text>
+            </View>
+          )}
+        </Animated.View>
 
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={() => router.push('/capture')}
+        {/* Total Calories Section */}
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.totalSection}
         >
-          <Text style={styles.secondaryButtonText}>Edit Items</Text>
-        </Pressable>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={async () => {
-            try {
-              setLoading(true);
-              setErrorText(null);
-              const confirmed = await confirmScan(items, photoUrl ?? undefined);
-              await saveLog({
-                items: confirmed.items,
-                total_calories: confirmed.total_calories ?? null,
-                photo_url: confirmed.photo_url ?? null,
-                created_at: new Date().toISOString(),
-              });
-              router.push('/');
-            } catch (err: any) {
-              setErrorText(err?.message || 'Failed to save log');
-            } finally {
-              setLoading(false);
-            }
-          }}
-          disabled={loading}
-        >
-          <Ionicons name='checkmark-circle' size={18} color='#FFFFFF' />
-          <Text style={styles.primaryButtonText}>Save to Log</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+          <Text style={styles.totalLabel}>TOTAL CALORIES</Text>
+          <Animated.Text style={[styles.totalValue, animatedTotalStyle]}>
+            {total !== null ? total : '--'}
+            <Text style={styles.unit}> kcal</Text>
+          </Animated.Text>
+        </Animated.View>
+
+        {/* Error Message */}
+        {errorText && (
+          <Animated.View entering={FadeIn} style={styles.errorCard}>
+            <Ionicons name='alert-circle' size={24} color={COLORS.error} />
+            <Text style={styles.errorText}>{errorText}</Text>
+            <Pressable onPress={runScan} style={styles.retryButton}>
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Food Items List */}
+        <View style={styles.listContainer}>
+          <Text style={styles.sectionTitle}>Detected Items</Text>
+
+          {items.map((item, index) => (
+            <Animated.View
+              key={`${item.name}-${index}`}
+              entering={FadeInDown.delay(400 + index * 100).springify()}
+              style={styles.itemCard}
+            >
+              <View style={styles.itemIcon}>
+                <Ionicons
+                  name='restaurant-outline'
+                  size={20}
+                  color={COLORS.accent}
+                />
+              </View>
+
+              <View style={styles.itemContent}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <View style={styles.itemMeta}>
+                  {item.grams && (
+                    <Text style={styles.itemDetail}>{item.grams}g</Text>
+                  )}
+                  {item.confidence && (
+                    <View style={styles.confidenceTag}>
+                      <Text style={styles.confidenceText}>
+                        {Math.round(item.confidence * 100)}% match
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.itemCalories}>
+                <Text style={styles.calorieCount}>{item.calories || 0}</Text>
+                <Text style={styles.calorieLabel}>kcal</Text>
+              </View>
+            </Animated.View>
+          ))}
+
+          {!loading && items.length === 0 && !errorText && (
+            <Text style={styles.emptyState}>
+              No food items detected. Try taking a clearer photo.
+            </Text>
+          )}
+        </View>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Bottom Action Bar */}
+      <Animated.View
+        entering={FadeInDown.delay(600).springify()}
+        style={styles.actionBar}
+      >
+        <BlurView intensity={80} tint='light' style={styles.blurContainer}>
+          <Pressable
+            style={styles.secondaryBtn}
+            onPress={() => router.push('/capture')}
+            disabled={loading}
+          >
+            <Ionicons
+              name='camera-reverse-outline'
+              size={24}
+              color={COLORS.secondary}
+            />
+          </Pressable>
+
+          <Pressable
+            style={[styles.primaryBtn, loading && styles.disabledBtn]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color='#FFF' />
+            ) : (
+              <>
+                <Text style={styles.primaryBtnText}>Save Log</Text>
+                <Ionicons name='arrow-forward' size={20} color='#FFF' />
+              </>
+            )}
+          </Pressable>
+        </BlurView>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  container: {
+    flex: 1,
     backgroundColor: COLORS.bg,
   },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-    gap: 12,
+  scrollContent: {
+    paddingBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
+  imageContainer: {
+    height: 300,
+    width: '100%',
+    position: 'relative',
+    backgroundColor: '#000',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  photoCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
-    padding: 16,
+  imageWrapper: {
+    flex: 1,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    opacity: 0.9,
+  },
+  scanOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  scanLine: {
+    width: '100%',
+    height: 3,
+    backgroundColor: COLORS.accent,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+  },
+  scanGlitch: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.accent,
+    opacity: 0.05,
+  },
+  statusBadge: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  analyzingTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  photoPlaceholder: {
-    height: 180,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: COLORS.line,
-    backgroundColor: '#FAFAFA',
+  successTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  photoPreview: {
-    height: 180,
-    borderRadius: 14,
+  statusText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 14,
   },
-  photoLabel: {
-    color: COLORS.muted,
+  placeholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E1E1E1',
+  },
+  placeholderText: {
+    marginTop: 12,
+    color: COLORS.secondary,
+    fontSize: 16,
+  },
+  totalSection: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  totalLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.secondary,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  totalValue: {
+    fontSize: 42,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  unit: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.secondary,
+  },
+  listContainer: {
+    padding: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  total: {
-    fontSize: 28,
     fontWeight: '700',
-    color: COLORS.accent,
+    color: COLORS.primary,
+    marginBottom: 16,
   },
-  totalRow: {
+  itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  totalBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: COLORS.accentSoft,
-  },
-  totalBadgeText: {
-    color: COLORS.accent,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  itemsCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
+    backgroundColor: COLORS.surface,
     padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: Platform.OS === 'ios' ? 'transparent' : COLORS.border,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  itemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0F2F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  body: {
+  itemContent: {
+    flex: 1,
+  },
+  itemName: {
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginBottom: 4,
   },
-  muted: {
-    color: COLORS.muted,
-  },
-  mutedSmall: {
-    color: COLORS.muted,
-    fontSize: 12,
-    marginBottom: 10,
-  },
-  loadingRow: {
+  itemMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  errorText: {
-    color: '#C24848',
+  itemDetail: {
+    fontSize: 13,
+    color: COLORS.secondary,
+  },
+  confidenceTag: {
+    backgroundColor: '#F0F3F4',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  confidenceText: {
+    fontSize: 10,
+    color: COLORS.secondary,
+    fontWeight: '600',
+  },
+  itemCalories: {
+    alignItems: 'flex-end',
+  },
+  calorieCount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  calorieLabel: {
+    fontSize: 12,
+    color: COLORS.secondary,
   },
   errorCard: {
+    margin: 20,
+    padding: 16,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#FDECEC',
+    gap: 12,
+  },
+  errorText: {
+    flex: 1,
+    color: '#D63031',
+    fontWeight: '500',
   },
   retryButton: {
-    marginLeft: 'auto',
+    backgroundColor: '#FFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#C24848',
+    borderRadius: 20,
   },
-  retryButtonText: {
-    color: '#FFFFFF',
+  retryText: {
+    color: '#D63031',
     fontWeight: '600',
     fontSize: 12,
   },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.line,
-    marginBottom: 12,
+  emptyState: {
+    textAlign: 'center',
+    color: COLORS.secondary,
+    marginTop: 20,
+    fontStyle: 'italic',
   },
-  actions: {
+  actionBar: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  blurContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 6,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    flex: 1,
     alignItems: 'center',
+    padding: 8,
+    backgroundColor:
+      Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : undefined,
+  },
+  secondaryBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F1F2F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  primaryBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.accent,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 6,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: COLORS.accentSoft,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    flex: 1,
     alignItems: 'center',
+    gap: 8,
   },
-  secondaryButtonText: {
-    color: COLORS.accent,
+  disabledBtn: {
+    opacity: 0.7,
+  },
+  primaryBtnText: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
