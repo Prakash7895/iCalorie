@@ -19,5 +19,10 @@ class Settings(BaseModel):
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     usda_api_key: str = os.getenv("USDA_API_KEY", "")
 
+    # JWT settings
+    jwt_secret_key: str = os.getenv(
+        "JWT_SECRET_KEY", "your-secret-key-change-in-production"
+    )
+
 
 settings = Settings()

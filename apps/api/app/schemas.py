@@ -32,3 +32,27 @@ class LogRequest(BaseModel):
     photo_url: Optional[str] = None
     created_at: Optional[str] = None
     plate_size_cm: Optional[float] = None
+
+
+# Auth Schemas
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    name: Optional[str] = None
+    created_at: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserResponse

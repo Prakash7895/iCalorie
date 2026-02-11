@@ -5,17 +5,20 @@ import {
   Text,
   View,
   RefreshControl,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { getLog } from '@/lib/api';
+import { storage } from '@/lib/storage';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [userName, setUserName] = useState<string>('');
   const [totalToday, setTotalToday] = useState(0);
   const [recentMeals, setRecentMeals] = useState<
     { name: string; kcal: number }[]
@@ -23,6 +26,15 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const fetchUserData = async () => {
+    const userData = await storage.getUserData();
+    if (userData?.name) {
+      setUserName(userData.name);
+    } else if (userData?.email) {
+      setUserName(userData.email.split('@')[0]);
+    }
+  };
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -49,6 +61,7 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    fetchUserData();
     fetchSummary();
   }, [today]);
 
@@ -71,16 +84,20 @@ export default function HomeScreen() {
         entering={FadeInDown.delay(100).springify()}
         style={styles.header}
       >
-        <View>
-          <Text style={styles.greeting}>Hello,</Text>
-          <Text style={styles.title}>Ready to track?</Text>
+        <View style={styles.greetingContainer}>
+          <View style={styles.greetingTextContainer}>
+            <Text style={styles.greeting}>Welcome back!</Text>
+            <Text style={styles.userName}>{userName || 'Guest'}</Text>
+            <Text style={styles.subtitle}>
+              Let's track your nutrition today
+            </Text>
+          </View>
+          <Pressable style={styles.avatarContainer} onPress={() => {}}>
+            <View style={styles.avatar}>
+              <Ionicons name='person' size={24} color={COLORS.white} />
+            </View>
+          </Pressable>
         </View>
-        <Button
-          variant='icon'
-          icon='person-outline'
-          onPress={() => {}}
-          style={styles.profileBtn}
-        />
       </Animated.View>
 
       <Animated.View
@@ -151,22 +168,51 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   header: {
+    backgroundColor: COLORS.accent,
+    marginHorizontal: -20,
+    marginTop: -60,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  greetingContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  greetingTextContainer: {
+    flex: 1,
+  },
   greeting: {
-    fontSize: 16,
-    color: COLORS.secondary,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  userName: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.white,
     marginBottom: 4,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.primary,
+  subtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
-  profileBtn: {
-    backgroundColor: COLORS.white,
+  avatarContainer: {
+    marginLeft: 16,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   ringCard: {
     backgroundColor: COLORS.white,

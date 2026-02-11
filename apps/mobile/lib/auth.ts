@@ -1,5 +1,8 @@
 import { storage } from './storage';
 
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
 export type User = {
   id: string;
   email: string;
@@ -11,26 +14,30 @@ export type AuthResponse = {
   user: User;
 };
 
-// Mock auth for now (replace with real API calls later)
 export const auth = {
   async login(email: string, password: string): Promise<AuthResponse> {
-    // TODO: Replace with actual API call to POST /auth/login
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
-
-    // Mock response
-    const mockResponse: AuthResponse = {
-      token: 'mock_token_' + Date.now(),
-      user: {
-        id: '1',
-        email,
-        name: email.split('@')[0],
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    };
+      body: JSON.stringify({ email, password }),
+    });
 
-    await storage.setAuthToken(mockResponse.token);
-    await storage.setUserData(mockResponse.user);
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ detail: 'Login failed' }));
+      throw new Error(error.detail || 'Login failed');
+    }
 
-    return mockResponse;
+    const data: AuthResponse = await response.json();
+
+    // Store auth data
+    await storage.setAuthToken(data.token);
+    await storage.setUserData(data.user);
+
+    return data;
   },
 
   async signup(
@@ -38,23 +45,28 @@ export const auth = {
     password: string,
     name?: string
   ): Promise<AuthResponse> {
-    // TODO: Replace with actual API call to POST /auth/signup
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
-
-    // Mock response
-    const mockResponse: AuthResponse = {
-      token: 'mock_token_' + Date.now(),
-      user: {
-        id: '1',
-        email,
-        name: name || email.split('@')[0],
+    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    };
+      body: JSON.stringify({ email, password, name }),
+    });
 
-    await storage.setAuthToken(mockResponse.token);
-    await storage.setUserData(mockResponse.user);
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ detail: 'Signup failed' }));
+      throw new Error(error.detail || 'Signup failed');
+    }
 
-    return mockResponse;
+    const data: AuthResponse = await response.json();
+
+    // Store auth data
+    await storage.setAuthToken(data.token);
+    await storage.setUserData(data.user);
+
+    return data;
   },
 
   async logout(): Promise<void> {
@@ -66,7 +78,24 @@ export const auth = {
     const token = await storage.getAuthToken();
     if (!token) return null;
 
-    return await storage.getUserData();
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Token is invalid, clear storage
+        await this.logout();
+        return null;
+      }
+
+      return await response.json();
+    } catch {
+      await this.logout();
+      return null;
+    }
   },
 
   async isAuthenticated(): Promise<boolean> {
