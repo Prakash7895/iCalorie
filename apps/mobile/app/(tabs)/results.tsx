@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 180, // Space for action bar (66px) + tab bar (70px) + spacing
   },
   imageContainer: {
     height: 300,
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 90, // Tab bar is 60px height + 15px bottom + 15px spacing = 90px
     left: 20,
     right: 20,
     borderRadius: 28,

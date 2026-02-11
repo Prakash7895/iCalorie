@@ -15,13 +15,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 25,
-          left: 20,
-          right: 20,
-          height: 60,
-          borderRadius: 30,
-          borderTopWidth: 0,
+          borderTopEndRadius: 30,
+          borderTopStartRadius: 30,
+          borderTopWidth: 2,
           backgroundColor:
             Platform.OS === 'android' ? COLORS.surface : 'transparent',
           elevation: 10,
@@ -29,7 +25,6 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.1,
           shadowRadius: 10,
-          paddingBottom: 0, // Reset default padding
         },
         tabBarBackground: () =>
           Platform.OS === 'ios' ? (
