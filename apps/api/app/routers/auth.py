@@ -1,3 +1,4 @@
+from app.services.url_helper import get_s3_url
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -53,7 +54,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             id=new_user.id,
             email=new_user.email,
             name=new_user.name,
-            profile_picture_url=new_user.profile_picture_url,
+            profile_picture_url=get_s3_url(new_user.profile_picture_url),
             created_at=new_user.created_at.isoformat(),
         ),
     )
@@ -86,7 +87,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             id=user.id,
             email=user.email,
             name=user.name,
-            profile_picture_url=user.profile_picture_url,
+            profile_picture_url=get_s3_url(user.profile_picture_url),
             created_at=user.created_at.isoformat(),
         ),
     )
@@ -120,6 +121,8 @@ def get_current_user(
             detail="User not found",
         )
 
+    # IMPORTANT: Must return User (SQLAlchemy model) not UserResponse (Pydantic)
+    # This allows other endpoints to use db operations like db.commit(), db.refresh()
     return user
 
 
@@ -130,7 +133,7 @@ def get_me(current_user: User = Depends(get_current_user)):
         id=current_user.id,
         email=current_user.email,
         name=current_user.name,
-        profile_picture_url=current_user.profile_picture_url,
+        profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
     )
 
@@ -195,11 +198,11 @@ async def upload_profile_picture(
     file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     key = f"profiles/{current_user.id}/{uuid.uuid4()}.{file_extension}"
 
-    # Upload to S3
-    photo_url = upload_image(key, content, file.content_type or "image/jpeg")
+    # Upload to S3 (returns full URL but we only store the key)
+    upload_image(key, content, file.content_type or "image/jpeg")
 
-    # Update user
-    current_user.profile_picture_url = photo_url
+    # Store only the key/path in database
+    current_user.profile_picture_url = key
     db.commit()
     db.refresh(current_user)
 
@@ -207,6 +210,6 @@ async def upload_profile_picture(
         id=current_user.id,
         email=current_user.email,
         name=current_user.name,
-        profile_picture_url=current_user.profile_picture_url,
+        profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
     )

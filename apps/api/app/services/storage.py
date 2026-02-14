@@ -24,6 +24,6 @@ def upload_image(key: str, data: bytes, content_type: str) -> str:
         io.BytesIO(data),
         settings.s3_bucket,
         key,
-        ExtraArgs={"ContentType": content_type},
+        ExtraArgs={"ContentType": content_type, "ACL": "public-read"},
     )
     return f"{settings.s3_endpoint_url}/{settings.s3_bucket}/{key}"

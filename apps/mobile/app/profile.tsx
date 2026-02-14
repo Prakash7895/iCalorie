@@ -71,22 +71,30 @@ export default function ProfileScreen() {
   };
 
   const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant photo library access');
-      return;
-    }
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant photo library access');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      await uploadProfilePicture(result.assets[0].uri);
+      if (!result.canceled && result.assets[0]) {
+        await uploadProfilePicture(result.assets[0].uri);
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        'Unable to open gallery. This may be an emulator issue. Try using the camera instead.'
+      );
     }
   };
 
@@ -126,6 +134,29 @@ export default function ProfileScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to upload profile picture');
       console.error(error);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera access');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadProfilePicture(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to open camera');
     }
   };
 
@@ -173,7 +204,16 @@ export default function ProfileScreen() {
               <Ionicons name='person' size={64} color={COLORS.white} />
             )}
           </View>
-          <Pressable style={styles.editAvatarBtn} onPress={handlePickImage}>
+          <Pressable
+            style={styles.editAvatarBtn}
+            onPress={() => {
+              Alert.alert('Profile Picture', 'Choose an option', [
+                { text: 'Take Photo', onPress: handleTakePhoto },
+                { text: 'Choose from Gallery', onPress: handlePickImage },
+                { text: 'Cancel', style: 'cancel' },
+              ]);
+            }}
+          >
             <Ionicons name='camera' size={20} color={COLORS.accent} />
           </Pressable>
         </Animated.View>

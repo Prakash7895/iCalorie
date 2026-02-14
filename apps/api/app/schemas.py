@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, model_validator, Field
 from typing import Optional, List
 
 
@@ -23,6 +23,15 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode="after")
+    def convert_profile_picture_path_to_url(self):
+        """Convert stored S3 key to full URL."""
+        from app.config import settings
+
+        if self.profile_picture_url and not self.profile_picture_url.startswith("http"):
+            self.profile_picture_url = f"{settings.s3_endpoint_url}/{settings.s3_bucket}/{self.profile_picture_url}"
+        return self
 
 
 class AuthResponse(BaseModel):
