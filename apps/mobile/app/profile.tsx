@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
+import { authenticatedFetch } from '@/lib/authFetch';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 
 export default function ProfileScreen() {
@@ -30,9 +31,33 @@ export default function ProfileScreen() {
   }, []);
 
   const loadUser = async () => {
-    const userData = await storage.getUserData();
-    setUser(userData);
-    setName(userData?.name || '');
+    // First, load from storage for immediate display (optimistic UI)
+    const cachedUserData = await storage.getUserData();
+    if (cachedUserData) {
+      setUser(cachedUserData);
+      setName(cachedUserData?.name || '');
+    }
+
+    // Always fetch fresh data from API to ensure latest profile picture, etc.
+    try {
+      const token = await storage.getAuthToken();
+      if (!token) return;
+
+      const response = await authenticatedFetch(
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/me`
+      );
+
+      if (response.ok) {
+        const freshUserData = await response.json();
+        setUser(freshUserData);
+        setName(freshUserData?.name || '');
+        // Update storage with fresh data
+        await storage.setUserData(freshUserData);
+      }
+    } catch (error) {
+      console.error('Error fetching fresh user data:', error);
+      // Already have cached data displayed, so just log the error
+    }
   };
 
   const handleSaveName = async () => {
@@ -42,14 +67,12 @@ export default function ProfileScreen() {
     }
 
     try {
-      const token = await storage.getAuthToken();
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ name }),
         }
@@ -100,7 +123,6 @@ export default function ProfileScreen() {
 
   const uploadProfilePicture = async (uri: string) => {
     try {
-      const token = await storage.getAuthToken();
       const formData = new FormData();
 
       // Get filename from URI
@@ -112,13 +134,10 @@ export default function ProfileScreen() {
         type: 'image/jpeg',
       } as any);
 
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile-picture`,
         {
           method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           body: formData,
         }
       );
@@ -396,6 +415,7 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 60, // Makes the image circular to match avatarLarge
   },
   editAvatarBtn: {
     position: 'absolute',

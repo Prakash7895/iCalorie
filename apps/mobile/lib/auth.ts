@@ -79,21 +79,16 @@ export const auth = {
     if (!token) return null;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { authenticatedFetch } = await import('./authFetch');
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
 
       if (!response.ok) {
-        // Token is invalid, clear storage
-        await this.logout();
         return null;
       }
 
       return await response.json();
     } catch {
-      await this.logout();
+      // authenticatedFetch already handles logout on 401
       return null;
     }
   },

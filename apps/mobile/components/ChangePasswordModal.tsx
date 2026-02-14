@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '@/constants/colors';
-import { storage } from '@/lib/storage';
+import { authenticatedFetch } from '@/lib/authFetch';
 
 type ChangePasswordModalProps = {
   visible: boolean;
@@ -46,14 +46,12 @@ export function ChangePasswordModal({
 
     setLoading(true);
     try {
-      const token = await storage.getAuthToken();
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/password`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             current_password: currentPassword,

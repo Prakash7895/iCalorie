@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { getLog } from '@/lib/api';
 import { storage } from '@/lib/storage';
+import { authenticatedFetch } from '@/lib/authFetch';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
@@ -30,12 +31,52 @@ export default function HomeScreen() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const fetchUserData = async () => {
-    const userData = await storage.getUserData();
-    setUser(userData);
-    if (userData?.name) {
-      setUserName(userData.name);
-    } else if (userData?.email) {
-      setUserName(userData.email.split('@')[0]);
+    try {
+      // First, load from storage for immediate display (optimistic UI)
+      const cachedUserData = await storage.getUserData();
+      if (cachedUserData) {
+        setUser(cachedUserData);
+        if (cachedUserData?.name) {
+          setUserName(cachedUserData.name);
+        } else if (cachedUserData?.email) {
+          setUserName(cachedUserData.email.split('@')[0]);
+        }
+      }
+
+      // Always fetch fresh data from API to ensure latest profile picture, etc.
+      const token = await storage.getAuthToken();
+      if (!token) return;
+
+      const response = await authenticatedFetch(
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/me`
+      );
+
+      if (response.ok) {
+        const freshUserData = await response.json();
+        setUser(freshUserData);
+        // Update storage with fresh data
+        await storage.setUserData(freshUserData);
+
+        if (freshUserData?.name) {
+          setUserName(freshUserData.name);
+        } else if (freshUserData?.email) {
+          setUserName(freshUserData.email.split('@')[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      // If API fails and we don't have cached data, try storage one more time
+      if (!user) {
+        const userData = await storage.getUserData();
+        if (userData) {
+          setUser(userData);
+          if (userData?.name) {
+            setUserName(userData.name);
+          } else if (userData?.email) {
+            setUserName(userData.email.split('@')[0]);
+          }
+        }
+      }
     }
   };
 
@@ -218,14 +259,15 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.accent,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
+    overflow: 'hidden', // Clips the image to create a perfect circle
   },
   ringCard: {
     backgroundColor: COLORS.white,
@@ -293,5 +335,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 20, // Makes the image round to match the avatar container
   },
 });

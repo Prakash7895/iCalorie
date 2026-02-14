@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '@/constants/api';
-import { storage } from './storage';
+import { authenticatedFetch } from './authFetch';
 
 export type FoodItem = {
   name: string;
@@ -24,15 +24,6 @@ export type LogRequest = {
   created_at?: string;
 };
 
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = await storage.getAuthToken();
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
-}
-
 export async function scanImage(
   imageUri: string,
   plateSizeCm?: number
@@ -47,10 +38,8 @@ export async function scanImage(
     form.append('plate_size_cm', String(plateSizeCm));
   }
 
-  const authHeaders = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/scan`, {
+  const res = await authenticatedFetch(`${API_BASE_URL}/scan`, {
     method: 'POST',
-    headers: authHeaders,
     body: form,
   });
   if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
@@ -61,12 +50,10 @@ export async function confirmScan(
   items: FoodItem[],
   photo_url?: string | null
 ): Promise<ScanResponse> {
-  const authHeaders = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/scan/confirm`, {
+  const res = await authenticatedFetch(`${API_BASE_URL}/scan/confirm`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders,
     },
     body: JSON.stringify({ items, photo_url }),
   });
@@ -75,12 +62,10 @@ export async function confirmScan(
 }
 
 export async function saveLog(payload: LogRequest) {
-  const authHeaders = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/log`, {
+  const res = await authenticatedFetch(`${API_BASE_URL}/log`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders,
     },
     body: JSON.stringify(payload),
   });
@@ -92,10 +77,7 @@ export async function getLog(date?: string) {
   const url = date
     ? `${API_BASE_URL}/log?date=${encodeURIComponent(date)}`
     : `${API_BASE_URL}/log`;
-  const authHeaders = await getAuthHeaders();
-  const res = await fetch(url, {
-    headers: authHeaders,
-  });
+  const res = await authenticatedFetch(url);
   if (!res.ok) throw new Error(`Get log failed: ${res.status}`);
   return res.json();
 }
