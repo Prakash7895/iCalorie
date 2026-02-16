@@ -14,6 +14,9 @@ from app.schemas import (
     TokenBalanceResponse,
     PurchaseTokensRequest,
     TokenUsageResponse,
+    TokenPackage,
+    PricingInfo,
+    AndroidPurchaseRequest,
 )
 from app.services.auth import (
     get_password_hash,
@@ -337,3 +340,150 @@ def get_token_usage(
         "limit": limit,
         "offset": offset,
     }
+
+
+@router.get("/tokens/pricing", response_model=PricingInfo)
+def get_token_pricing():
+    """
+    Get available token packages and pricing information.
+    """
+    packages = [
+        TokenPackage(
+            product_id="com.icalorie.tokens.3000",
+            tokens=3000,
+            scans=5,
+            price_usd=0.99,
+            savings_percent=0,
+        ),
+        TokenPackage(
+            product_id="com.icalorie.tokens.9000",
+            tokens=9000,
+            scans=15,
+            price_usd=2.49,
+            savings_percent=17,
+        ),
+        TokenPackage(
+            product_id="com.icalorie.tokens.24000",
+            tokens=24000,
+            scans=50,
+            price_usd=4.99,
+            savings_percent=50,
+        ),
+    ]
+
+    return PricingInfo(
+        packages=packages,
+        price_per_scan=0.10,
+    )
+
+
+@router.post("/tokens/verify-android-purchase", response_model=UserResponse)
+def verify_android_purchase(
+    request: AndroidPurchaseRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Verify Android in-app purchase and add tokens to user account.
+
+    1. Validates purchase with Google Play
+    2. Checks for duplicate purchases (prevents replay attacks)
+    3. Adds tokens to user account
+    4. Logs purchase receipt for auditing
+    """
+    from app.models import PurchaseReceipt
+    from app.services.google_play import get_google_play_service
+    from app.services.token_service import add_purchased_tokens
+    from app.config import settings
+
+    # Use provided package name or default from config
+    package_name = request.package_name or settings.google_play_package_name
+
+    if not package_name:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Play package name not configured",
+        )
+
+    # Check if receipt already processed (prevent duplicates)
+    existing_receipt = (
+        db.query(PurchaseReceipt)
+        .filter(PurchaseReceipt.receipt_token == request.purchase_token)
+        .first()
+    )
+
+    if existing_receipt:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This purchase has already been processed",
+        )
+
+    # Verify purchase with Google Play
+    google_play = get_google_play_service()
+    verification_result = google_play.verify_purchase(
+        package_name=package_name,
+        product_id=request.product_id,
+        purchase_token=request.purchase_token,
+    )
+
+    if not verification_result or not verification_result.get("valid"):
+        error_msg = (
+            verification_result.get("error", "Invalid purchase")
+            if verification_result
+            else "Verification failed"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Purchase verification failed: {error_msg}",
+        )
+
+    # Map product IDs to token amounts
+    token_packages = {
+        "com.icalorie.tokens.5": {"scans": 5, "price": 0.99},
+        "com.icalorie.tokens.15": {"scans": 15, "price": 2.49},
+        "com.icalorie.tokens.50": {"scans": 50, "price": 4.99},
+    }
+
+    package = token_packages.get(request.product_id)
+    if not package:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown product ID: {request.product_id}",
+        )
+
+    # Add tokens to user account
+    tokens_to_add = package["scans"]
+    updated_user = add_purchased_tokens(current_user, tokens_to_add, db)
+
+    # Save purchase receipt
+    receipt = PurchaseReceipt(
+        user_id=current_user.id,
+        platform="android",
+        product_id=request.product_id,
+        receipt_token=request.purchase_token,
+        tokens_added=tokens_to_add,
+        price_usd=package["price"],
+    )
+    db.add(receipt)
+    db.commit()
+
+    # Acknowledge purchase with Google Play (required)
+    google_play.acknowledge_purchase(
+        package_name=package_name,
+        product_id=request.product_id,
+        purchase_token=request.purchase_token,
+    )
+
+    return UserResponse(
+        id=updated_user.id,
+        email=updated_user.email,
+        name=updated_user.name,
+        profile_picture_url=get_s3_url(updated_user.profile_picture_url),
+        created_at=updated_user.created_at.isoformat(),
+        ai_tokens=updated_user.ai_tokens,
+        last_token_reset=(
+            updated_user.last_token_reset.isoformat()
+            if updated_user.last_token_reset
+            else None
+        ),
+    )

@@ -63,7 +63,7 @@ JSON schema:
     """
 
     model = ChatOpenAI(
-        model="gpt-4o-mini", api_key=settings.openai_api_key, max_tokens=1000
+        model=settings.ai_model, api_key=settings.openai_api_key, max_tokens=5000
     )
     message = HumanMessage(
         content=[
@@ -109,7 +109,7 @@ JSON schema:
                 # Create token usage record
                 token_record = TokenUsage(
                     user_id=user_id,
-                    model_name="gpt-4o-mini",
+                    model_name=settings.ai_model,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     total_tokens=total_tokens,

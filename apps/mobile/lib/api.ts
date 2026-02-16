@@ -25,6 +25,18 @@ export type LogRequest = {
   created_at?: string;
 };
 
+export type TokenPackage = {
+  product_id: string;
+  scans: number;
+  price_usd: number;
+  savings_percent: number;
+};
+
+export type PricingInfo = {
+  base_price_per_scan: number;
+  packages: TokenPackage[];
+};
+
 export async function scanImage(
   imageUri: string,
   plateSizeCm?: number
@@ -102,5 +114,11 @@ export async function purchaseTokens(amount: number): Promise<any> {
     body: JSON.stringify({ amount }),
   });
   if (!res.ok) throw new Error(`Purchase tokens failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getTokenPricing(): Promise<PricingInfo> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens/pricing`);
+  if (!res.ok) throw new Error(`Get pricing failed: ${res.status}`);
   return res.json();
 }

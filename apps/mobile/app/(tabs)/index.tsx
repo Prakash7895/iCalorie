@@ -17,6 +17,7 @@ import { authenticatedFetch } from '@/lib/authFetch';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
+import TokenPurchaseModal from '@/components/TokenPurchaseModal';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,6 +28,8 @@ export default function HomeScreen() {
     { name: string; kcal: number }[]
   >([]);
   const [loading, setLoading] = useState(false);
+  const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState(0);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -70,6 +73,8 @@ export default function HomeScreen() {
         const userData = await storage.getUserData();
         if (userData) {
           setUser(userData);
+          setTokenBalance(userData.ai_tokens || 0);
+          await storage.setUserData(userData);
           if (userData?.name) {
             setUserName(userData.name);
           } else if (userData?.email) {
@@ -112,111 +117,137 @@ export default function HomeScreen() {
   const progress = Math.min(totalToday / 2000, 1);
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={loading}
-          onRefresh={fetchSummary}
-          tintColor={COLORS.accent}
-        />
-      }
-    >
-      <Animated.View
-        entering={FadeInDown.delay(100).springify()}
-        style={styles.header}
+    <>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={fetchSummary}
+            tintColor={COLORS.accent}
+          />
+        }
       >
-        <View style={styles.greetingContainer}>
-          <View style={styles.greetingTextContainer}>
-            <Text style={styles.greeting}>Welcome back!</Text>
-            <Text style={styles.userName}>{userName || 'Guest'}</Text>
-            <Text style={styles.subtitle}>
-              Let's track your nutrition today
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            {/* Token Badge */}
-            {user?.ai_tokens !== undefined && (
-              <View style={styles.tokenBadge}>
-                <Ionicons name='flash' size={14} color={COLORS.accent} />
-                <Text style={styles.tokenText}>{user.ai_tokens}</Text>
-              </View>
-            )}
-            <Pressable
-              style={styles.avatarContainer}
-              onPress={() => router.push('/profile')}
-            >
-              <View style={styles.avatar}>
-                {userName && user?.profile_picture_url ? (
-                  <Image
-                    source={{ uri: user.profile_picture_url }}
-                    style={styles.avatarImage}
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.header}
+        >
+          <View style={styles.greetingContainer}>
+            <View style={styles.greetingTextContainer}>
+              <Text style={styles.greeting}>Welcome back!</Text>
+              <Text style={styles.userName}>{userName || 'Guest'}</Text>
+              <Text style={styles.subtitle}>
+                Let's track your nutrition today
+              </Text>
+            </View>
+            <View style={styles.headerRight}>
+              {/* Token Badge */}
+              {user?.ai_tokens !== undefined && (
+                <Pressable
+                  style={styles.tokenBadge}
+                  onPress={() => setPurchaseModalVisible(true)}
+                >
+                  <Ionicons name='flash' size={14} color={COLORS.accent} />
+                  <Text style={styles.tokenText}>{user.ai_tokens}</Text>
+                  <Ionicons
+                    name='add-circle'
+                    size={16}
+                    color={COLORS.accent}
+                    style={{ marginLeft: 4 }}
                   />
-                ) : (
-                  <Ionicons name='person' size={24} color={COLORS.white} />
-                )}
-              </View>
-            </Pressable>
+                </Pressable>
+              )}
+              <Pressable
+                style={styles.avatarContainer}
+                onPress={() => router.push('/profile')}
+              >
+                <View style={styles.avatar}>
+                  {userName && user?.profile_picture_url ? (
+                    <Image
+                      source={{ uri: user.profile_picture_url }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <Ionicons name='person' size={24} color={COLORS.white} />
+                  )}
+                </View>
+              </Pressable>
+            </View>
           </View>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.ringCard}
+        >
+          <ProgressRing
+            progress={progress}
+            current={totalToday}
+            target={2000}
+          />
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(500).springify()}
+          style={styles.actions}
+        >
+          <Button
+            title='Scan Meal'
+            icon='camera'
+            onPress={() => router.push('/capture?autoCamera=1')}
+            style={styles.actionBtn}
+          />
+          <Button
+            title='Manual Log'
+            variant='secondary'
+            icon='add-circle'
+            onPress={() => router.push('/log')}
+            style={styles.actionBtn}
+          />
+        </Animated.View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Meals</Text>
+          {recentMeals.length > 0 ? (
+            recentMeals.map((meal, index) => (
+              <Animated.View
+                key={index}
+                entering={FadeInUp.delay(600 + index * 100).springify()}
+                style={styles.mealCard}
+              >
+                <View style={styles.mealIcon}>
+                  <Ionicons
+                    name='fast-food-outline'
+                    size={20}
+                    color={COLORS.accent}
+                  />
+                </View>
+                <View style={styles.mealInfo}>
+                  <Text style={styles.mealName}>{meal.name}</Text>
+                  <Text style={styles.mealTime}>Today</Text>
+                </View>
+                <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+              </Animated.View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No meals tracked today yet.</Text>
+          )}
         </View>
-      </Animated.View>
+      </ScrollView>
 
-      <Animated.View
-        entering={FadeInDown.delay(300).springify()}
-        style={styles.ringCard}
-      >
-        <ProgressRing progress={progress} current={totalToday} target={2000} />
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.delay(500).springify()}
-        style={styles.actions}
-      >
-        <Button
-          title='Scan Meal'
-          icon='camera'
-          onPress={() => router.push('/capture?autoCamera=1')}
-          style={styles.actionBtn}
-        />
-        <Button
-          title='Manual Log'
-          variant='secondary'
-          icon='add-circle'
-          onPress={() => router.push('/log')}
-          style={styles.actionBtn}
-        />
-      </Animated.View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Meals</Text>
-        {recentMeals.length > 0 ? (
-          recentMeals.map((meal, index) => (
-            <Animated.View
-              key={index}
-              entering={FadeInUp.delay(600 + index * 100).springify()}
-              style={styles.mealCard}
-            >
-              <View style={styles.mealIcon}>
-                <Ionicons
-                  name='fast-food-outline'
-                  size={20}
-                  color={COLORS.accent}
-                />
-              </View>
-              <View style={styles.mealInfo}>
-                <Text style={styles.mealName}>{meal.name}</Text>
-                <Text style={styles.mealTime}>Today</Text>
-              </View>
-              <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
-            </Animated.View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No meals tracked today yet.</Text>
-        )}
-      </View>
-    </ScrollView>
+      {/* Token Purchase Modal */}
+      <TokenPurchaseModal
+        visible={purchaseModalVisible}
+        onClose={() => setPurchaseModalVisible(false)}
+        currentBalance={tokenBalance}
+        onPurchaseComplete={() => {
+          // Refresh user data to get updated token balance
+          fetchUserData();
+        }}
+      />
+    </>
   );
 }
 

@@ -71,6 +71,22 @@ class TokenUsageResponse(BaseModel):
         from_attributes = True
 
 
+class TokenPackage(BaseModel):
+    """Represents a token purchase package."""
+
+    scans: int  # Number of scans user will get
+    price_usd: float  # Price in USD
+    product_id: str  # Google Play product ID
+    savings_percent: Optional[int] = None  # Discount % compared to base price
+
+
+class PricingInfo(BaseModel):
+    """Pricing information for token purchases."""
+
+    base_price_per_scan: float
+    packages: List[TokenPackage]
+
+
 # Food & Nutrition Schemas
 class FoodItem(BaseModel):
     name: str
@@ -99,4 +115,30 @@ class LogRequest(BaseModel):
     total_calories: Optional[float] = None
     photo_url: Optional[str] = None
     created_at: Optional[str] = None
-    plate_size_cm: Optional[float] = None
+
+
+class AndroidPurchaseRequest(BaseModel):
+    """Request to verify Android in-app purchase."""
+
+    purchase_token: str  # Google Play purchase token
+    product_id: str  # Product ID that was purchased
+    package_name: Optional[str] = (
+        None  # App package name (optional, uses config default)
+    )
+
+
+class TokenPackage(BaseModel):
+    """Token package information."""
+
+    product_id: str
+    tokens: int
+    scans: int
+    price_usd: float
+    savings_percent: int
+
+
+class PricingInfo(BaseModel):
+    """Pricing information for token packages."""
+
+    packages: List[TokenPackage]
+    price_per_scan: float

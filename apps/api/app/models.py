@@ -67,3 +67,21 @@ class TokenUsage(Base):
 
     # Relationship
     user = relationship("User")
+
+
+class PurchaseReceipt(Base):
+    __tablename__ = "purchase_receipts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    platform = Column(String, nullable=False)  # 'android' or 'ios'
+    product_id = Column(String, nullable=False)  # e.g., 'com.icalorie.tokens.5'
+    receipt_token = Column(
+        String, nullable=False, unique=True, index=True
+    )  # Unique purchase token
+    tokens_added = Column(Integer, nullable=False)  # Number of scan tokens added
+    price_usd = Column(Float, nullable=True)  # Purchase price
+    verified_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    user = relationship("User")

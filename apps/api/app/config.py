@@ -24,9 +24,18 @@ class Settings(BaseModel):
         "JWT_SECRET_KEY", "your-secret-key-change-in-production"
     )
 
-    # Token system settings
-    daily_free_tokens: int = int(os.getenv("DAILY_FREE_TOKENS", "1"))
-    token_reset_hours: int = int(os.getenv("TOKEN_RESET_HOURS", "24"))
+    ai_model: str = os.getenv("AI_MODEL", "gpt-4o-mini")
+
+    # Token pricing configuration
+    # Base unit: 1 scan ≈ 3000 AI tokens (prompt + image + response)
+    tokens_per_scan: int = 3000  # AI tokens consumed per scan
+    price_per_scan_usd: float = 0.10  # $0.10 per scan
+
+    # Google Play product IDs (for Android IAP)
+    google_play_package_name: str = os.getenv("GOOGLE_PLAY_PACKAGE_NAME", "")
+    google_play_service_account_json: str = os.getenv(
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", ""
+    )
 
 
 settings = Settings()
