@@ -20,7 +20,7 @@ class UserResponse(BaseModel):
     name: Optional[str]
     profile_picture_url: Optional[str] = None
     created_at: str
-    ai_tokens: int = 1
+    ai_tokens: int = 0
 
     class Config:
         from_attributes = True
