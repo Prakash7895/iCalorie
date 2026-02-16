@@ -1,9 +1,10 @@
 import base64
 import json
-from typing import List
+from typing import List, Optional
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.schemas import FoodItem
@@ -16,7 +17,10 @@ from app.services.nutrition import (
 
 
 async def analyze_plate(
-    image_bytes: bytes, plate_size_cm: float | None = None
+    image_bytes: bytes,
+    plate_size_cm: float | None = None,
+    user_id: Optional[int] = None,
+    db: Optional[Session] = None,
 ) -> List[FoodItem]:
     if not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is not set")
@@ -72,6 +76,52 @@ JSON schema:
     raw = (
         response.content if isinstance(response.content, str) else str(response.content)
     )
+
+    # Log token usage to database
+    if user_id and db:
+        try:
+            from app.models import TokenUsage
+
+            # Extract usage information from response
+            usage_metadata = getattr(response, "usage_metadata", None) or getattr(
+                response, "response_metadata", {}
+            ).get("token_usage", {})
+
+            if usage_metadata:
+                input_tokens = getattr(
+                    usage_metadata, "input_tokens", 0
+                ) or usage_metadata.get("prompt_tokens", 0)
+                output_tokens = getattr(
+                    usage_metadata, "output_tokens", 0
+                ) or usage_metadata.get("completion_tokens", 0)
+                total_tokens = getattr(
+                    usage_metadata, "total_tokens", 0
+                ) or usage_metadata.get("total_tokens", input_tokens + output_tokens)
+
+                # Calculate cost based on GPT-4o-mini pricing
+                # https://openai.com/api/pricing/
+                # Input: $0.150 / 1M tokens
+                # Output: $0.600 / 1M tokens
+                input_cost = (input_tokens / 1_000_000) * 0.150
+                output_cost = (output_tokens / 1_000_000) * 0.600
+                total_cost = input_cost + output_cost
+
+                # Create token usage record
+                token_record = TokenUsage(
+                    user_id=user_id,
+                    model_name="gpt-4o-mini",
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=total_tokens,
+                    estimated_cost_usd=round(total_cost, 6),
+                    endpoint="/scan",
+                )
+                db.add(token_record)
+                db.commit()
+        except Exception as e:
+            # Don't fail the request if logging fails
+            print(f"Warning: Failed to log token usage: {e}")
+            db.rollback() if db else None
 
     try:
         # Clean potential markdown fences

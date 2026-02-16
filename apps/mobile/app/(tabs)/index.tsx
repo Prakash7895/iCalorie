@@ -136,21 +136,30 @@ export default function HomeScreen() {
               Let's track your nutrition today
             </Text>
           </View>
-          <Pressable
-            style={styles.avatarContainer}
-            onPress={() => router.push('/profile')}
-          >
-            <View style={styles.avatar}>
-              {userName && user?.profile_picture_url ? (
-                <Image
-                  source={{ uri: user.profile_picture_url }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <Ionicons name='person' size={24} color={COLORS.white} />
-              )}
-            </View>
-          </Pressable>
+          <View style={styles.headerRight}>
+            {/* Token Badge */}
+            {user?.ai_tokens !== undefined && (
+              <View style={styles.tokenBadge}>
+                <Ionicons name='flash' size={14} color={COLORS.accent} />
+                <Text style={styles.tokenText}>{user.ai_tokens}</Text>
+              </View>
+            )}
+            <Pressable
+              style={styles.avatarContainer}
+              onPress={() => router.push('/profile')}
+            >
+              <View style={styles.avatar}>
+                {userName && user?.profile_picture_url ? (
+                  <Image
+                    source={{ uri: user.profile_picture_url }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Ionicons name='person' size={24} color={COLORS.white} />
+                )}
+              </View>
+            </Pressable>
+          </View>
         </View>
       </Animated.View>
 
@@ -238,6 +247,25 @@ const styles = StyleSheet.create({
   },
   greetingTextContainer: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tokenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  tokenText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   greeting: {
     fontSize: 14,

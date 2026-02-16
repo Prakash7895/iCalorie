@@ -15,6 +15,15 @@ class User(Base):
     profile_picture_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Token management
+    ai_tokens = Column(Integer, default=1, nullable=False)  # Current available tokens
+    last_token_reset = Column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )  # Last daily reset
+    total_purchased_tokens = Column(
+        Integer, default=0, nullable=False
+    )  # Lifetime purchased tokens
+
     # Relationship
     meal_logs = relationship("MealLog", back_populates="user")
 
@@ -32,3 +41,20 @@ class MealLog(Base):
 
     # Relationship
     user = relationship("User", back_populates="meal_logs")
+
+
+class TokenUsage(Base):
+    __tablename__ = "token_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    model_name = Column(String, nullable=False)  # e.g., "gpt-4o-mini"
+    input_tokens = Column(Integer, nullable=False, default=0)
+    output_tokens = Column(Integer, nullable=False, default=0)
+    total_tokens = Column(Integer, nullable=False, default=0)
+    estimated_cost_usd = Column(Float, nullable=True)  # Cost in USD
+    endpoint = Column(String, nullable=True)  # e.g., "/scan"
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationship
+    user = relationship("User")

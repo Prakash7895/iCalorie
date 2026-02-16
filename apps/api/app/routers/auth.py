@@ -11,12 +11,20 @@ from app.schemas import (
     UserResponse,
     UpdateProfileRequest,
     ChangePasswordRequest,
+    TokenBalanceResponse,
+    PurchaseTokensRequest,
+    TokenUsageResponse,
 )
 from app.services.auth import (
     get_password_hash,
     verify_password,
     create_access_token,
     decode_access_token,
+)
+from app.services.token_service import (
+    get_token_balance,
+    add_purchased_tokens,
+    reset_daily_tokens_if_needed,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -56,6 +64,12 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             name=new_user.name,
             profile_picture_url=get_s3_url(new_user.profile_picture_url),
             created_at=new_user.created_at.isoformat(),
+            ai_tokens=new_user.ai_tokens,
+            last_token_reset=(
+                new_user.last_token_reset.isoformat()
+                if new_user.last_token_reset
+                else None
+            ),
         ),
     )
 
@@ -89,6 +103,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             name=user.name,
             profile_picture_url=get_s3_url(user.profile_picture_url),
             created_at=user.created_at.isoformat(),
+            ai_tokens=user.ai_tokens,
+            last_token_reset=(
+                user.last_token_reset.isoformat() if user.last_token_reset else None
+            ),
         ),
     )
 
@@ -127,14 +145,25 @@ def get_current_user(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Get the current authenticated user."""
+    # Reset daily tokens if needed before returning user data
+    current_user = reset_daily_tokens_if_needed(current_user, db)
+
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
         name=current_user.name,
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
+        ai_tokens=current_user.ai_tokens,
+        last_token_reset=(
+            current_user.last_token_reset.isoformat()
+            if current_user.last_token_reset
+            else None
+        ),
     )
 
 
@@ -157,6 +186,12 @@ def update_profile(
         name=current_user.name,
         profile_picture_url=current_user.profile_picture_url,
         created_at=current_user.created_at.isoformat(),
+        ai_tokens=current_user.ai_tokens,
+        last_token_reset=(
+            current_user.last_token_reset.isoformat()
+            if current_user.last_token_reset
+            else None
+        ),
     )
 
 
@@ -212,4 +247,126 @@ async def upload_profile_picture(
         name=current_user.name,
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
+        ai_tokens=current_user.ai_tokens,
+        last_token_reset=(
+            current_user.last_token_reset.isoformat()
+            if current_user.last_token_reset
+            else None
+        ),
     )
+
+
+@router.get("/tokens", response_model=TokenBalanceResponse)
+def get_tokens(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get current token balance and reset information."""
+    # Reset daily tokens if needed
+    current_user = reset_daily_tokens_if_needed(current_user, db)
+
+    balance_info = get_token_balance(current_user)
+    return TokenBalanceResponse(**balance_info)
+
+
+@router.post("/tokens/purchase", response_model=UserResponse)
+def purchase_tokens(
+    request: PurchaseTokensRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Purchase additional AI tokens.
+
+    NOTE: This is a placeholder endpoint. In production, integrate with a payment
+    provider (Stripe, PayPal, etc.) before adding tokens.
+    """
+    # TODO: Add payment integration here
+    # For now, this is a placeholder that simply adds tokens
+    # In production, you would:
+    # 1. Create a payment intent with Stripe/PayPal
+    # 2. Verify payment success
+    # 3. Then add tokens to user account
+
+    # Placeholder: Add tokens directly (for testing/demo purposes)
+    updated_user = add_purchased_tokens(current_user, request.amount, db)
+
+    return UserResponse(
+        id=updated_user.id,
+        email=updated_user.email,
+        name=updated_user.name,
+        profile_picture_url=get_s3_url(updated_user.profile_picture_url),
+        created_at=updated_user.created_at.isoformat(),
+        ai_tokens=updated_user.ai_tokens,
+        last_token_reset=(
+            updated_user.last_token_reset.isoformat()
+            if updated_user.last_token_reset
+            else None
+        ),
+    )
+
+
+@router.get("/tokens/usage", response_model=dict)
+def get_token_usage(
+    limit: int = 20,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get user's token usage history with pagination.
+
+    Returns recent API calls with token consumption and estimated costs.
+    """
+    from app.models import TokenUsage
+
+    # Get total count
+    total = db.query(TokenUsage).filter(TokenUsage.user_id == current_user.id).count()
+
+    # Get paginated results
+    usage_records = (
+        db.query(TokenUsage)
+        .filter(TokenUsage.user_id == current_user.id)
+        .order_by(TokenUsage.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    # Calculate total cost
+    total_cost = (
+        db.query(TokenUsage)
+        .filter(TokenUsage.user_id == current_user.id)
+        .with_entities(db.func.sum(TokenUsage.estimated_cost_usd))
+        .scalar()
+        or 0.0
+    )
+
+    total_tokens_used = (
+        db.query(TokenUsage)
+        .filter(TokenUsage.user_id == current_user.id)
+        .with_entities(db.func.sum(TokenUsage.total_tokens))
+        .scalar()
+        or 0
+    )
+
+    return {
+        "usage": [
+            TokenUsageResponse(
+                id=record.id,
+                model_name=record.model_name,
+                input_tokens=record.input_tokens,
+                output_tokens=record.output_tokens,
+                total_tokens=record.total_tokens,
+                estimated_cost_usd=record.estimated_cost_usd,
+                endpoint=record.endpoint,
+                created_at=record.created_at.isoformat(),
+            )
+            for record in usage_records
+        ],
+        "total_records": total,
+        "total_cost_usd": round(total_cost, 4),
+        "total_tokens_used": total_tokens_used,
+        "limit": limit,
+        "offset": offset,
+    }

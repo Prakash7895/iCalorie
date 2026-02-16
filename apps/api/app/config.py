@@ -24,5 +24,9 @@ class Settings(BaseModel):
         "JWT_SECRET_KEY", "your-secret-key-change-in-production"
     )
 
+    # Token system settings
+    daily_free_tokens: int = int(os.getenv("DAILY_FREE_TOKENS", "1"))
+    token_reset_hours: int = int(os.getenv("TOKEN_RESET_HOURS", "24"))
+
 
 settings = Settings()

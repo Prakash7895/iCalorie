@@ -20,6 +20,8 @@ class UserResponse(BaseModel):
     name: Optional[str]
     profile_picture_url: Optional[str] = None
     created_at: str
+    ai_tokens: int = 1
+    last_token_reset: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -48,6 +50,30 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6)
 
 
+class TokenBalanceResponse(BaseModel):
+    ai_tokens: int
+    last_token_reset: str
+    hours_until_reset: float
+
+
+class PurchaseTokensRequest(BaseModel):
+    amount: int = Field(..., gt=0, description="Number of tokens to purchase")
+
+
+class TokenUsageResponse(BaseModel):
+    id: int
+    model_name: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    estimated_cost_usd: Optional[float]
+    endpoint: Optional[str]
+    created_at: str
+
+    class Config:
+        from_attributes = True
+
+
 # Food & Nutrition Schemas
 class FoodItem(BaseModel):
     name: str
@@ -63,6 +89,7 @@ class ScanResponse(BaseModel):
     items: List[FoodItem]
     total_calories: Optional[float] = None
     photo_url: Optional[str] = None
+    remaining_tokens: Optional[int] = None
 
 
 class ScanConfirmRequest(BaseModel):

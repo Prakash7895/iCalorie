@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -90,9 +91,40 @@ export default function ResultsScreen() {
 
       // Success animation pulse
       totalScale.value = withSequence(withSpring(1.2), withSpring(1));
+
+      // Show remaining tokens if available
+      if (data.remaining_tokens !== undefined) {
+        // Optional: you can show a toast or subtle notification here
+        console.log(`Remaining tokens: ${data.remaining_tokens}`);
+      }
     } catch (err: any) {
       console.log(err);
-      setErrorText(err?.message || 'Failed to scan image');
+
+      // Check for 402 Payment Required (insufficient tokens)
+      if (
+        err?.message?.includes('402') ||
+        err?.message?.includes('Insufficient')
+      ) {
+        setErrorText('Out of free scans for today');
+        Alert.alert(
+          '🪙 Out of Free Scans',
+          "You've used your free scan for today. Your tokens will reset in 24 hours, or you can purchase more tokens now to continue scanning.",
+          [
+            { text: 'Wait for Reset', style: 'cancel' },
+            {
+              text: 'Purchase Tokens',
+              onPress: () => {
+                Alert.alert(
+                  'Coming Soon',
+                  'Token purchase feature will be available soon!'
+                );
+              },
+            },
+          ]
+        );
+      } else {
+        setErrorText(err?.message || 'Failed to scan image');
+      }
     } finally {
       setLoading(false);
       scanLineY.value = withTiming(0); // Reset scan line

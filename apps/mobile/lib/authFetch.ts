@@ -31,7 +31,7 @@ export async function authenticatedFetch(
   // Check for authentication failure
   if (response.status === 401) {
     await handleAuthFailure();
-    throw new Error('Authentication expired');
+    // throw new Error('Authentication expired');
   }
 
   return response;

@@ -15,6 +15,7 @@ export type ScanResponse = {
   items: FoodItem[];
   total_calories?: number;
   photo_url?: string | null;
+  remaining_tokens?: number;
 };
 
 export type LogRequest = {
@@ -79,5 +80,29 @@ export async function getLog(date?: string) {
     : `${API_BASE_URL}/log`;
   const res = await authenticatedFetch(url);
   if (!res.ok) throw new Error(`Get log failed: ${res.status}`);
+  return res.json();
+}
+
+export type TokenBalance = {
+  ai_tokens: number;
+  last_token_reset: string;
+  hours_until_reset: number;
+};
+
+export async function getTokenBalance(): Promise<TokenBalance> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens`);
+  if (!res.ok) throw new Error(`Get token balance failed: ${res.status}`);
+  return res.json();
+}
+
+export async function purchaseTokens(amount: number): Promise<any> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens/purchase`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ amount }),
+  });
+  if (!res.ok) throw new Error(`Purchase tokens failed: ${res.status}`);
   return res.json();
 }
