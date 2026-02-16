@@ -27,6 +27,7 @@ export type LogRequest = {
 
 export type TokenPackage = {
   product_id: string;
+  tokens: number;
   scans: number;
   price_usd: number;
   savings_percent: number;

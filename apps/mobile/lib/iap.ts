@@ -4,6 +4,7 @@
  */
 
 import * as RNIap from 'react-native-iap';
+import { ErrorCode } from 'react-native-iap';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '@/constants/api';
 import { authenticatedFetch } from './authFetch';
@@ -47,8 +48,11 @@ export async function getProducts(): Promise<RNIap.Product[]> {
     await initializeIAP();
 
     if (Platform.OS === 'android') {
-      const products = await RNIap.getProducts(PRODUCT_IDS);
-      return products;
+      const result = await RNIap.fetchProducts({ skus: PRODUCT_IDS });
+      // fetchProducts returns Product[] for in-app products (default type)
+      // Filter out any null and ensure we have Product[] type
+      if (!result) return [];
+      return result as RNIap.Product[];
     } else {
       // iOS support can be added later
       return [];
@@ -67,12 +71,19 @@ export async function purchaseProduct(productId: string): Promise<void> {
     await initializeIAP();
 
     if (Platform.OS === 'android') {
-      await RNIap.requestPurchase({ productId });
+      await RNIap.requestPurchase({
+        type: 'in-app',
+        request: {
+          google: {
+            skus: [productId],
+          },
+        },
+      });
     } else {
       throw new Error('iOS purchases not yet implemented');
     }
   } catch (error: any) {
-    if (error.code === 'E_USER_CANCELLED') {
+    if (error.code === ErrorCode.UserCancelled) {
       throw new Error('Purchase cancelled');
     }
     console.error('❌ Purchase failed:', error);
@@ -127,7 +138,7 @@ async function handlePurchaseUpdate(purchase: RNIap.Purchase): Promise<void> {
 function handlePurchaseError(error: RNIap.PurchaseError): void {
   console.warn('Purchase error:', error);
 
-  if (error.code === 'E_USER_CANCELLED') {
+  if (error.code === ErrorCode.UserCancelled) {
     // User cancelled, no action needed
     return;
   }
