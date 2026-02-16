@@ -85,8 +85,6 @@ export async function getLog(date?: string) {
 
 export type TokenBalance = {
   ai_tokens: number;
-  last_token_reset: string;
-  hours_until_reset: number;
 };
 
 export async function getTokenBalance(): Promise<TokenBalance> {

@@ -1,4 +1,13 @@
-from sqlalchemy import Column, DateTime, Integer, Float, String, JSON, ForeignKey
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Integer,
+    Float,
+    String,
+    JSON,
+    ForeignKey,
+    Boolean,
+)
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
@@ -17,12 +26,12 @@ class User(Base):
 
     # Token management
     ai_tokens = Column(Integer, default=1, nullable=False)  # Current available tokens
-    last_token_reset = Column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )  # Last daily reset
     total_purchased_tokens = Column(
         Integer, default=0, nullable=False
     )  # Lifetime purchased tokens
+    free_scan_used = Column(
+        Boolean, default=False, nullable=False
+    )  # True if daily free scan used
 
     # Relationship
     meal_logs = relationship("MealLog", back_populates="user")

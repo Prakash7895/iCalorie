@@ -8,7 +8,6 @@ export type User = {
   email: string;
   name?: string;
   ai_tokens?: number;
-  last_token_reset?: string;
 };
 
 export type AuthResponse = {

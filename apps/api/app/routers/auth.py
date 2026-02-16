@@ -24,7 +24,6 @@ from app.services.auth import (
 from app.services.token_service import (
     get_token_balance,
     add_purchased_tokens,
-    reset_daily_tokens_if_needed,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,11 +64,6 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             profile_picture_url=get_s3_url(new_user.profile_picture_url),
             created_at=new_user.created_at.isoformat(),
             ai_tokens=new_user.ai_tokens,
-            last_token_reset=(
-                new_user.last_token_reset.isoformat()
-                if new_user.last_token_reset
-                else None
-            ),
         ),
     )
 
@@ -104,9 +98,6 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             profile_picture_url=get_s3_url(user.profile_picture_url),
             created_at=user.created_at.isoformat(),
             ai_tokens=user.ai_tokens,
-            last_token_reset=(
-                user.last_token_reset.isoformat() if user.last_token_reset else None
-            ),
         ),
     )
 
@@ -149,8 +140,6 @@ def get_me(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get the current authenticated user."""
-    # Reset daily tokens if needed before returning user data
-    current_user = reset_daily_tokens_if_needed(current_user, db)
 
     return UserResponse(
         id=current_user.id,
@@ -159,11 +148,6 @@ def get_me(
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
         ai_tokens=current_user.ai_tokens,
-        last_token_reset=(
-            current_user.last_token_reset.isoformat()
-            if current_user.last_token_reset
-            else None
-        ),
     )
 
 
@@ -187,11 +171,6 @@ def update_profile(
         profile_picture_url=current_user.profile_picture_url,
         created_at=current_user.created_at.isoformat(),
         ai_tokens=current_user.ai_tokens,
-        last_token_reset=(
-            current_user.last_token_reset.isoformat()
-            if current_user.last_token_reset
-            else None
-        ),
     )
 
 
@@ -248,11 +227,6 @@ async def upload_profile_picture(
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
         ai_tokens=current_user.ai_tokens,
-        last_token_reset=(
-            current_user.last_token_reset.isoformat()
-            if current_user.last_token_reset
-            else None
-        ),
     )
 
 
@@ -262,8 +236,6 @@ def get_tokens(
     db: Session = Depends(get_db),
 ):
     """Get current token balance and reset information."""
-    # Reset daily tokens if needed
-    current_user = reset_daily_tokens_if_needed(current_user, db)
 
     balance_info = get_token_balance(current_user)
     return TokenBalanceResponse(**balance_info)
@@ -298,11 +270,6 @@ def purchase_tokens(
         profile_picture_url=get_s3_url(updated_user.profile_picture_url),
         created_at=updated_user.created_at.isoformat(),
         ai_tokens=updated_user.ai_tokens,
-        last_token_reset=(
-            updated_user.last_token_reset.isoformat()
-            if updated_user.last_token_reset
-            else None
-        ),
     )
 
 

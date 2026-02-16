@@ -7,7 +7,6 @@ from app.models import MealLog, User
 from sqlalchemy.orm import Session
 from app.services.storage import upload_image
 from app.routers.auth import get_current_user
-from app.services.token_service import check_and_deduct_token
 
 router = APIRouter(prefix="/scan", tags=["scan"])
 
@@ -20,9 +19,8 @@ async def scan_plate(
     current_user: User = Depends(get_current_user),
 ):
     """Scan a plate image and analyze food items. Requires 1 AI token."""
-    # Check and deduct token
-    token_deducted = check_and_deduct_token(current_user, db)
-    if not token_deducted:
+
+    if current_user.free_scan_used:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="Insufficient AI tokens. You've used your free scan for today. Please purchase more tokens to continue.",

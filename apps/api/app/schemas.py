@@ -21,7 +21,6 @@ class UserResponse(BaseModel):
     profile_picture_url: Optional[str] = None
     created_at: str
     ai_tokens: int = 1
-    last_token_reset: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -52,8 +51,6 @@ class ChangePasswordRequest(BaseModel):
 
 class TokenBalanceResponse(BaseModel):
     ai_tokens: int
-    last_token_reset: str
-    hours_until_reset: float
 
 
 class PurchaseTokensRequest(BaseModel):
