@@ -88,11 +88,11 @@ JSON schema:
             ).get("token_usage", {})
 
             if usage_metadata:
-                input_tokens = getattr(
-                    usage_metadata, "input_tokens", 0
+                input_tokens = usage_metadata.get(
+                    "input_tokens", 0
                 ) or usage_metadata.get("prompt_tokens", 0)
-                output_tokens = getattr(
-                    usage_metadata, "output_tokens", 0
+                output_tokens = usage_metadata.get(
+                    "output_tokens", 0
                 ) or usage_metadata.get("completion_tokens", 0)
                 total_tokens = getattr(
                     usage_metadata, "total_tokens", 0
