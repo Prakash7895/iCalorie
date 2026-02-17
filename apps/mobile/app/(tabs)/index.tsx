@@ -39,7 +39,14 @@ export default function HomeScreen() {
   const [user, setUser] = useState<any>(null);
   const [totalToday, setTotalToday] = useState(0);
   const [recentMeals, setRecentMeals] = useState<
-    { id: number; name: string; kcal: number }[]
+    {
+      id: number;
+      name: string;
+      kcal: number;
+      photo_url?: string | null;
+      items?: any[];
+      created_at?: string;
+    }[]
   >([]);
   const [loading, setLoading] = useState(false);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
@@ -121,10 +128,21 @@ export default function HomeScreen() {
       );
       setTotalToday(Math.round(total));
       setRecentMeals(
-        items.slice(0, 3).map((m: any, i: number) => ({
+        items.slice(0, 3).map((m: any) => ({
           id: m.id,
-          name: `Meal ${i + 1}`,
+          name: (() => {
+            const hour = m.created_at
+              ? new Date(m.created_at).getHours()
+              : new Date().getHours();
+            if (hour >= 5 && hour < 11) return 'Breakfast';
+            if (hour >= 11 && hour < 16) return 'Lunch';
+            if (hour >= 16 && hour < 21) return 'Dinner';
+            return 'Snack';
+          })(),
           kcal: Math.round(m.total_calories ?? 0),
+          photo_url: m.photo_url,
+          items: m.items,
+          created_at: m.created_at,
         }))
       );
     } catch {
@@ -389,18 +407,41 @@ export default function HomeScreen() {
                   style={styles.mealCard}
                   onPress={() => router.push(`/meal/${meal.id}`)}
                 >
-                  <View style={styles.mealIcon}>
-                    <Ionicons
-                      name='fast-food-outline'
-                      size={20}
-                      color={COLORS.accent}
+                  {meal.photo_url ? (
+                    <Image
+                      source={{ uri: meal.photo_url }}
+                      style={styles.mealThumbnail}
                     />
-                  </View>
+                  ) : (
+                    <View style={styles.mealIcon}>
+                      <Ionicons
+                        name='fast-food-outline'
+                        size={20}
+                        color={COLORS.accent}
+                      />
+                    </View>
+                  )}
                   <View style={styles.mealInfo}>
-                    <Text style={styles.mealName}>{meal.name}</Text>
-                    <Text style={styles.mealTime}>Today</Text>
+                    <View style={styles.mealHeaderRow}>
+                      <Text style={styles.mealName}>{meal.name}</Text>
+                      <Text style={styles.mealTime}>
+                        {meal.created_at
+                          ? new Date(meal.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'Today'}
+                      </Text>
+                    </View>
+                    <Text style={styles.mealItems} numberOfLines={1}>
+                      {meal.items?.map((i) => i.name).join(', ') ||
+                        'No items listed'}
+                    </Text>
                   </View>
-                  <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+                  <View style={styles.mealKcalBadge}>
+                    <Text style={styles.mealKcal}>{meal.kcal}</Text>
+                    <Text style={styles.mealKcalUnit}>kcal</Text>
+                  </View>
                 </Pressable>
               </Animated.View>
             ))
@@ -579,36 +620,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 20,
+    marginBottom: 12,
     ...SHADOWS.small,
   },
+  mealThumbnail: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: COLORS.bg,
+  },
   mealIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.accentSoft,
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: COLORS.bg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
   mealInfo: {
     flex: 1,
+    marginLeft: 16,
+    marginRight: 8,
+  },
+  mealHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   mealName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   mealTime: {
     fontSize: 12,
     color: COLORS.secondary,
-    marginTop: 2,
+    fontWeight: '500',
+  },
+  mealItems: {
+    fontSize: 13,
+    color: COLORS.secondary,
+    marginTop: 4,
+    fontWeight: '400',
+  },
+  mealKcalBadge: {
+    alignItems: 'flex-end',
+    minWidth: 50,
   },
   mealKcal: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.primary,
+  },
+  mealKcalUnit: {
+    fontSize: 11,
+    color: COLORS.secondary,
+    fontWeight: '600',
+    marginTop: -2,
   },
   emptyText: {
     textAlign: 'center',

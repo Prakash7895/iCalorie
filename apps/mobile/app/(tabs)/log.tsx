@@ -7,11 +7,19 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
+  Platform,
 } from 'react-native';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { getLog } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { authenticatedFetch } from '@/lib/authFetch';
+import { API_BASE_URL } from '@/constants/api';
+import { storage } from '@/lib/storage';
 import { COLORS, SHADOWS } from '@/constants/colors';
 
 type LogItem = {
@@ -27,37 +35,146 @@ export default function LogScreen() {
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogItem[]>([]);
+  const [user, setUser] = useState<any>(null);
 
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const fetchUserData = async () => {
+    try {
+      const cachedUserData = await storage.getUserData();
+      if (cachedUserData) {
+        setUser(cachedUserData);
+      }
+
+      const token = await storage.getAuthToken();
+      if (!token) return;
+
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
+      if (response.ok) {
+        const freshUserData = await response.json();
+        setUser(freshUserData);
+        await storage.setUserData(freshUserData);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchLog = useCallback(async () => {
     setLoading(true);
     setErrorText(null);
     try {
-      const data = await getLog(today);
+      const data = await getLog(selectedDate);
       setLogs(Array.isArray(data.items) ? data.items : []);
     } catch (err: any) {
       setErrorText(err?.message || 'Failed to load log');
     } finally {
       setLoading(false);
     }
-  }, [today]);
+  }, [selectedDate]);
 
   useEffect(() => {
+    fetchUserData();
     fetchLog();
   }, [fetchLog]);
+
+  const calorieGoal = user?.daily_calorie_goal || 2000;
+  const totalCalories = logs.reduce(
+    (sum, log) => sum + (log.total_calories || 0),
+    0
+  );
+  const progress = Math.min(totalCalories / calorieGoal, 1);
+  const isToday = selectedDate === new Date().toISOString().slice(0, 10);
+
+  const changeDate = (days: number) => {
+    const date = new Date(selectedDate);
+    date.setDate(date.getDate() + days);
+    setSelectedDate(date.toISOString().slice(0, 10));
+  };
+
+  const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
+  const onDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (date) {
+      setSelectedDate(date.toISOString().slice(0, 10));
+    }
+  };
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Text style={styles.title}>Daily Log</Text>
-        <Text style={styles.date}>
-          {new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
-        </Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title}>Daily Log</Text>
+            <Text style={styles.dateSubtitle}>{formattedDate}</Text>
+          </View>
+          <View style={styles.dateActions}>
+            <Pressable
+              style={styles.dateBtn}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons name='calendar' size={20} color={COLORS.primary} />
+            </Pressable>
+            <View style={styles.dividerVertical} />
+            <Pressable style={styles.dateBtn} onPress={() => changeDate(-1)}>
+              <Ionicons name='chevron-back' size={20} color={COLORS.primary} />
+            </Pressable>
+            {!isToday && (
+              <Pressable style={styles.dateBtn} onPress={() => changeDate(1)}>
+                <Ionicons
+                  name='chevron-forward'
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date(selectedDate)}
+            mode='date'
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onDateChange}
+            maximumDate={new Date()}
+          />
+        )}
+
+        {/* Summary Card */}
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.summaryCard}
+        >
+          <View style={styles.summaryInfo}>
+            <View>
+              <Text style={styles.summaryLabel}>Daily Progress</Text>
+              <Text style={styles.summaryValue}>
+                {Math.round(totalCalories)}{' '}
+                <Text style={styles.summaryGoal}>/ {calorieGoal} kcal</Text>
+              </Text>
+            </View>
+            <View style={styles.percentageBadge}>
+              <Text style={styles.percentageText}>
+                {Math.round(progress * 100)}%
+              </Text>
+            </View>
+          </View>
+          <View style={styles.progressBarBg}>
+            <Animated.View
+              entering={FadeInDown.delay(500)}
+              style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
+            />
+          </View>
+        </Animated.View>
       </View>
 
       <ScrollView
@@ -133,7 +250,15 @@ export default function LogScreen() {
                       color={COLORS.white}
                     />
                     <Text style={styles.mealBadgeText}>
-                      Meal {logs.length - idx}
+                      {(() => {
+                        const hour = log.created_at
+                          ? new Date(log.created_at).getHours()
+                          : new Date().getHours();
+                        if (hour >= 5 && hour < 11) return 'Breakfast';
+                        if (hour >= 11 && hour < 16) return 'Lunch';
+                        if (hour >= 16 && hour < 21) return 'Dinner';
+                        return 'Snack';
+                      })()}
                     </Text>
                   </View>
                   <Text style={styles.timestamp}>
@@ -146,21 +271,26 @@ export default function LogScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.cardContent}>
-                  <Text style={styles.totalKcal}>
-                    {Math.round(log.total_calories ?? 0)}
-                    <Text style={styles.unit}> kcal</Text>
-                  </Text>
+                <View style={styles.cardContentRow}>
+                  <View style={styles.cardTextContent}>
+                    <Text style={styles.totalKcal}>
+                      {Math.round(log.total_calories ?? 0)}
+                      <Text style={styles.unit}> kcal</Text>
+                    </Text>
 
-                  <View style={styles.divider} />
-
-                  {(log.items || []).map((item, i) => (
-                    <View key={`${item.name}-${i}`} style={styles.itemRow}>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <View style={styles.dots} />
-                      <Text style={styles.itemKcal}>{item.calories ?? 0}</Text>
+                    <View style={styles.itemPreview}>
+                      <Text style={styles.itemPreviewText} numberOfLines={1}>
+                        {(log.items || []).map((i) => i.name).join(', ')}
+                      </Text>
                     </View>
-                  ))}
+                  </View>
+
+                  {log.photo_url && (
+                    <Image
+                      source={{ uri: log.photo_url }}
+                      style={styles.mealThumbnail}
+                    />
+                  )}
                 </View>
               </Pressable>
             </Animated.View>
@@ -182,22 +312,98 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 16,
     backgroundColor: COLORS.bg,
     zIndex: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: COLORS.primary,
   },
-  date: {
+  dateSubtitle: {
     fontSize: 14,
     color: COLORS.secondary,
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
     fontWeight: '600',
+    marginTop: 2,
+  },
+  dateActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dateBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  dividerVertical: {
+    width: 1,
+    height: 20,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 4,
+    alignSelf: 'center',
+  },
+  summaryCard: {
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 20,
+    ...SHADOWS.medium,
+  },
+  summaryInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginTop: 2,
+  },
+  summaryGoal: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.secondary,
+  },
+  percentageBadge: {
+    backgroundColor: COLORS.accentSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  percentageText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.accent,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: COLORS.bg,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.accent,
+    borderRadius: 4,
   },
   content: {
     paddingHorizontal: 20,
@@ -311,8 +517,19 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     fontWeight: '500',
   },
-  cardContent: {
-    gap: 4,
+  cardContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardTextContent: {
+    flex: 1,
+  },
+  mealThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: COLORS.bg,
   },
   totalKcal: {
     fontSize: 24,
@@ -324,33 +541,12 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     fontWeight: '500',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginVertical: 8,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  itemName: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  dots: {
-    flex: 1,
-    height: 1,
-    borderBottomWidth: 1,
-    borderColor: '#EEEEEE',
-    borderStyle: 'dashed',
-    marginHorizontal: 8,
+  itemPreview: {
     marginTop: 4,
   },
-  itemKcal: {
-    fontSize: 14,
+  itemPreviewText: {
+    fontSize: 13,
     color: COLORS.secondary,
+    fontWeight: '500',
   },
 });
