@@ -70,3 +70,52 @@ async def get_log(
             }
         )
     return {"items": results}
+
+
+@router.get("/summary")
+async def get_log_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get daily calorie totals for the last 7 days."""
+    from datetime import timedelta
+    import sqlalchemy as sa
+
+    # Calculate date range
+    end_date = datetime.utcnow()
+    start_date = (end_date - timedelta(days=6)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    # Query daily totals using SQL grouping
+    # We use date_trunc or cast to date depending on DB (PostgreSQL assumed here)
+    summary_query = (
+        db.query(
+            sa.func.date(MealLog.created_at).label("date"),
+            sa.func.sum(MealLog.total_calories).label("total_calories"),
+        )
+        .filter(
+            MealLog.user_id == current_user.id,
+            MealLog.created_at >= start_date,
+        )
+        .group_by(sa.func.date(MealLog.created_at))
+        .order_by(sa.func.date(MealLog.created_at))
+    )
+
+    rows = summary_query.all()
+
+    # Fill in missing dates with zero calories to ensure 7 days of data
+    summary_dict = {row.date.isoformat(): row.total_calories for row in rows}
+
+    final_summary = []
+    for i in range(7):
+        current_date = (start_date + timedelta(days=i)).date()
+        date_str = current_date.isoformat()
+        final_summary.append(
+            {
+                "date": date_str,
+                "total_calories": float(summary_dict.get(date_str, 0) or 0),
+            }
+        )
+
+    return {"summary": final_summary}

@@ -7,16 +7,20 @@ import {
   RefreshControl,
   Pressable,
   Image,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { getLog, API_BASE_URL } from '@/lib/api';
+import { getLog, getSummary, API_BASE_URL } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { COLORS, SHADOWS } from '@/constants/colors';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
+import { BarChart } from '@/components/ui/BarChart';
 import TokenPurchaseModal from '@/components/TokenPurchaseModal';
 
 export default function HomeScreen() {
@@ -30,6 +34,12 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
   const [scanBalance, setScanBalance] = useState(0);
+  const [weeklySummary, setWeeklySummary] = useState<
+    { date: string; total_calories: number }[]
+  >([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -84,7 +94,7 @@ export default function HomeScreen() {
     }
   };
 
-  const fetchSummary = async () => {
+  const fetchLog = async () => {
     setLoading(true);
     try {
       const data = await getLog(today);
@@ -108,15 +118,31 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchWeeklySummary = async () => {
+    try {
+      const data = await getSummary();
+      setWeeklySummary(data.summary);
+    } catch (error) {
+      console.error('Error fetching weekly summary:', error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchUserData();
-      fetchSummary();
+      fetchLog();
+      fetchWeeklySummary();
     }, [today])
   );
 
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const progress = Math.min(totalToday / calorieGoal, 1);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const scrollOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollOffset / (SCREEN_WIDTH - 40));
+    setCarouselIndex(index);
+  };
 
   return (
     <>
@@ -129,7 +155,8 @@ export default function HomeScreen() {
             refreshing={loading}
             onRefresh={() => {
               fetchUserData();
-              fetchSummary();
+              fetchLog();
+              fetchWeeklySummary();
             }}
             tintColor={COLORS.accent}
           />
@@ -180,27 +207,68 @@ export default function HomeScreen() {
           )}
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.delay(300).springify()}
-          style={styles.ringCard}
-        >
-          <ProgressRing
-            progress={progress}
-            current={totalToday}
-            target={calorieGoal}
-          />
-          <Pressable
-            style={styles.editGoalBtn}
-            onPress={() => router.push('/profile')} // Or a dedicated modal
+        <View style={styles.carouselContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={styles.carouselContent}
           >
-            <Ionicons
-              name='settings-outline'
-              size={16}
-              color={COLORS.secondary}
-            />
-            <Text style={styles.editGoalText}>Adjust Goal</Text>
-          </Pressable>
-        </Animated.View>
+            {/* Daily Progress Slide */}
+            <Animated.View
+              entering={FadeInDown.delay(300).springify()}
+              style={{ width: SCREEN_WIDTH }}
+            >
+              <View style={styles.carouselCard}>
+                <View style={styles.ringCard}>
+                  <Pressable
+                    style={styles.cardSettingsBtn}
+                    onPress={() => router.push('/profile')}
+                  >
+                    <Ionicons
+                      name='settings-outline'
+                      size={20}
+                      color={COLORS.secondary}
+                    />
+                  </Pressable>
+                  <ProgressRing
+                    progress={progress}
+                    current={totalToday}
+                    target={calorieGoal}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Weekly Trends Slide */}
+            <Animated.View
+              entering={FadeInDown.delay(400).springify()}
+              style={{ width: SCREEN_WIDTH }}
+            >
+              <View style={styles.carouselCard}>
+                <View style={styles.summarySection}>
+                  <BarChart
+                    data={weeklySummary}
+                    target={calorieGoal}
+                    containerStyle={styles.barChartContainer}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+          </ScrollView>
+
+          {/* Pagination Indicators */}
+          <View style={styles.pagination}>
+            {[0, 1].map((i) => (
+              <View
+                key={i}
+                style={[styles.dot, carouselIndex === i && styles.activeDot]}
+              />
+            ))}
+          </View>
+        </View>
 
         <Animated.View
           entering={FadeInDown.delay(500).springify()}
@@ -272,7 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 100,
-    gap: 24,
+    gap: 16,
   },
   header: {
     backgroundColor: COLORS.accent,
@@ -283,6 +351,71 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
+  },
+  carouselContainer: {
+    marginVertical: 10,
+    marginHorizontal: -20,
+    overflow: 'visible', // Allow shadows to be visible
+  },
+  carouselContent: {
+    paddingHorizontal: 0,
+    paddingBottom: 20, // Space for shadows
+  },
+  carouselCard: {
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  ringCard: {
+    backgroundColor: COLORS.white,
+    padding: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    ...SHADOWS.medium,
+    height: 260,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  cardSettingsBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  summarySection: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    ...SHADOWS.medium,
+    height: 260,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  barChartContainer: {
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+    padding: 24,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  activeDot: {
+    width: 16,
+    backgroundColor: COLORS.accent,
   },
   topRow: {
     flexDirection: 'row',
@@ -343,14 +476,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    overflow: 'hidden', // Clips the image to create a perfect circle
-  },
-  ringCard: {
-    backgroundColor: COLORS.white,
-    padding: 32,
-    borderRadius: 24,
-    alignItems: 'center',
-    ...SHADOWS.medium,
+    overflow: 'hidden',
   },
   editGoalBtn: {
     flexDirection: 'row',
@@ -426,6 +552,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 20, // Makes the image round to match the avatar container
+    borderRadius: 20,
   },
 });

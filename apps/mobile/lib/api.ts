@@ -83,6 +83,14 @@ export async function getLog(date?: string) {
   return res.json();
 }
 
+export async function getSummary(): Promise<{
+  summary: { date: string; total_calories: number }[];
+}> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/log/summary`);
+  if (!res.ok) throw new Error(`Get summary failed: ${res.status}`);
+  return res.json();
+}
+
 export type ScanBalance = {
   scans_remaining: number;
 };
