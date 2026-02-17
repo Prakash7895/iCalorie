@@ -103,11 +103,7 @@ class ScanResponse(BaseModel):
     total_calories: Optional[float] = None
     photo_url: Optional[str] = None
     scans_remaining: Optional[int] = None
-
-
-class ScanConfirmRequest(BaseModel):
-    items: List[FoodItem]
-    photo_url: Optional[str] = None
+    log_id: Optional[int] = None
 
 
 class LogRequest(BaseModel):

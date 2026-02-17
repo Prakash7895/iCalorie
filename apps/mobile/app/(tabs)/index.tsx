@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,10 +8,10 @@ import {
   Pressable,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { getLog } from '@/lib/api';
+import { getLog, API_BASE_URL } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { COLORS, SHADOWS } from '@/constants/colors';
@@ -50,13 +50,12 @@ export default function HomeScreen() {
       const token = await storage.getAuthToken();
       if (!token) return;
 
-      const response = await authenticatedFetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/me`
-      );
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
 
       if (response.ok) {
         const freshUserData = await response.json();
         setUser(freshUserData);
+        setScanBalance(freshUserData.scans_remaining || 0);
         // Update storage with fresh data
         await storage.setUserData(freshUserData);
 
@@ -109,10 +108,12 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-    fetchSummary();
-  }, [today]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+      fetchSummary();
+    }, [today])
+  );
 
   const progress = Math.min(totalToday / 2000, 1);
 
@@ -125,7 +126,10 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={fetchSummary}
+            onRefresh={() => {
+              fetchUserData();
+              fetchSummary();
+            }}
             tintColor={COLORS.accent}
           />
         }

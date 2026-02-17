@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/constants/api';
+export { API_BASE_URL };
 import { authenticatedFetch } from './authFetch';
 
 export type FoodItem = {
@@ -16,6 +17,7 @@ export type ScanResponse = {
   total_calories?: number;
   photo_url?: string | null;
   scans_remaining?: number;
+  log_id?: number;
 };
 
 export type LogRequest = {
@@ -23,6 +25,7 @@ export type LogRequest = {
   total_calories?: number | null;
   photo_url?: string | null;
   created_at?: string;
+  plate_size_cm?: number;
 };
 
 export type TokenPackage = {
@@ -56,21 +59,6 @@ export async function scanImage(
     body: form,
   });
   if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
-  return res.json();
-}
-
-export async function confirmScan(
-  items: FoodItem[],
-  photo_url?: string | null
-): Promise<ScanResponse> {
-  const res = await authenticatedFetch(`${API_BASE_URL}/scan/confirm`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ items, photo_url }),
-  });
-  if (!res.ok) throw new Error(`Confirm failed: ${res.status}`);
   return res.json();
 }
 

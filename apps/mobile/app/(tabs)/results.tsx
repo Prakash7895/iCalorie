@@ -25,7 +25,7 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
-import { confirmScan, scanImage, saveLog } from '@/lib/api';
+import { scanImage, saveLog } from '@/lib/api';
 import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window');
@@ -145,21 +145,9 @@ export default function ResultsScreen() {
   }));
 
   const handleSave = async () => {
-    try {
-      setLoading(true);
-      setErrorText(null);
-      const confirmed = await confirmScan(items, photoUrl ?? undefined);
-      await saveLog({
-        items: confirmed.items,
-        total_calories: confirmed.total_calories ?? null,
-        photo_url: confirmed.photo_url ?? null,
-        created_at: new Date().toISOString(),
-      });
-      router.push('/');
-    } catch (err: any) {
-      setErrorText(err?.message || 'Failed to save log');
-      setLoading(false);
-    }
+    // The meal is already logged by the backend in the scan endpoint.
+    // We just return home.
+    router.push('/');
   };
 
   return (
