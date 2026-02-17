@@ -18,12 +18,15 @@ import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState('');
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [calorieGoal, setCalorieGoal] = useState('2000');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
@@ -43,14 +46,13 @@ export default function ProfileScreen() {
       const token = await storage.getAuthToken();
       if (!token) return;
 
-      const response = await authenticatedFetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/me`
-      );
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
 
       if (response.ok) {
         const freshUserData = await response.json();
         setUser(freshUserData);
         setName(freshUserData?.name || '');
+        setCalorieGoal(String(freshUserData?.daily_calorie_goal || 2000));
         // Update storage with fresh data
         await storage.setUserData(freshUserData);
       }
@@ -68,7 +70,7 @@ export default function ProfileScreen() {
 
     try {
       const response = await authenticatedFetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile`,
+        `${API_BASE_URL}/auth/profile`,
         {
           method: 'PUT',
           headers: {
@@ -90,6 +92,40 @@ export default function ProfileScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to update name. Please try again.');
       console.error(error);
+    }
+  };
+
+  const handleSaveGoal = async () => {
+    const goalNum = parseInt(calorieGoal);
+    if (isNaN(goalNum) || goalNum <= 0) {
+      Alert.alert(
+        'Error',
+        'Please enter a valid positive number for your goal'
+      );
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/auth/profile`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ daily_calorie_goal: goalNum }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update goal');
+
+      const updatedUser = await response.json();
+      await storage.setUserData(updatedUser);
+      setUser(updatedUser);
+      setEditingGoal(false);
+      Alert.alert('Success', 'Daily calorie goal updated!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update goal');
     }
   };
 
@@ -135,7 +171,7 @@ export default function ProfileScreen() {
       } as any);
 
       const response = await authenticatedFetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/auth/profile-picture`,
+        `${API_BASE_URL}/auth/profile-picture`,
         {
           method: 'PUT',
           body: formData,
@@ -274,6 +310,42 @@ export default function ProfileScreen() {
                 </Pressable>
               ) : (
                 <Pressable onPress={() => setEditingName(true)}>
+                  <Ionicons name='pencil' size={20} color={COLORS.secondary} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* Calorie Goal */}
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <Ionicons name='flame-outline' size={20} color={COLORS.error} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Daily Calorie Goal</Text>
+                {editingGoal ? (
+                  <TextInput
+                    style={styles.input}
+                    value={calorieGoal}
+                    onChangeText={setCalorieGoal}
+                    placeholder='2000'
+                    placeholderTextColor={COLORS.secondary}
+                    keyboardType='numeric'
+                    autoFocus
+                  />
+                ) : (
+                  <Text style={styles.infoValue}>
+                    {user?.daily_calorie_goal || 2000} kcal
+                  </Text>
+                )}
+              </View>
+              {editingGoal ? (
+                <Pressable onPress={handleSaveGoal}>
+                  <Ionicons name='checkmark' size={24} color={COLORS.accent} />
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => setEditingGoal(true)}>
                   <Ionicons name='pencil' size={20} color={COLORS.secondary} />
                 </Pressable>
               )}

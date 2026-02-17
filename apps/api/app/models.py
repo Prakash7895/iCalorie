@@ -29,6 +29,10 @@ class User(Base):
         Integer, default=5, nullable=False
     )  # Current available scans (default to 5 free scans)
 
+    daily_calorie_goal = Column(
+        Integer, default=2000, nullable=False
+    )  # User's daily calorie goal
+
     # Relationship
     meal_logs = relationship("MealLog", back_populates="user")
 

@@ -67,6 +67,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             profile_picture_url=get_s3_url(new_user.profile_picture_url),
             created_at=new_user.created_at.isoformat(),
             scans_remaining=new_user.scans_remaining,
+            daily_calorie_goal=new_user.daily_calorie_goal,
         ),
     )
 
@@ -101,6 +102,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             profile_picture_url=get_s3_url(user.profile_picture_url),
             created_at=user.created_at.isoformat(),
             scans_remaining=user.scans_remaining,
+            daily_calorie_goal=user.daily_calorie_goal,
         ),
     )
 
@@ -151,6 +153,7 @@ def get_me(
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
+        daily_calorie_goal=current_user.daily_calorie_goal,
     )
 
 
@@ -163,6 +166,8 @@ def update_profile(
     """Update user profile."""
     if request.name is not None:
         current_user.name = request.name
+    if request.daily_calorie_goal is not None:
+        current_user.daily_calorie_goal = request.daily_calorie_goal
 
     db.commit()
     db.refresh(current_user)
@@ -174,6 +179,7 @@ def update_profile(
         profile_picture_url=current_user.profile_picture_url,
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
+        daily_calorie_goal=current_user.daily_calorie_goal,
     )
 
 
@@ -230,6 +236,7 @@ async def upload_profile_picture(
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
+        daily_calorie_goal=current_user.daily_calorie_goal,
     )
 
 
@@ -273,6 +280,7 @@ def purchase_tokens(
         profile_picture_url=get_s3_url(updated_user.profile_picture_url),
         created_at=updated_user.created_at.isoformat(),
         scans_remaining=updated_user.scans_remaining,
+        daily_calorie_goal=updated_user.daily_calorie_goal,
     )
 
 
@@ -478,4 +486,5 @@ def verify_android_purchase(
         profile_picture_url=get_s3_url(updated_user.profile_picture_url),
         created_at=updated_user.created_at.isoformat(),
         scans_remaining=updated_user.scans_remaining,
+        daily_calorie_goal=updated_user.daily_calorie_goal,
     )

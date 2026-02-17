@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     profile_picture_url: Optional[str] = None
     created_at: str
     scans_remaining: int = 0
+    daily_calorie_goal: int = 2000
 
     class Config:
         from_attributes = True
@@ -42,6 +43,7 @@ class AuthResponse(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     name: Optional[str] = None
+    daily_calorie_goal: Optional[int] = None
 
 
 class ChangePasswordRequest(BaseModel):

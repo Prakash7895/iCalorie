@@ -115,7 +115,8 @@ export default function HomeScreen() {
     }, [today])
   );
 
-  const progress = Math.min(totalToday / 2000, 1);
+  const calorieGoal = user?.daily_calorie_goal || 2000;
+  const progress = Math.min(totalToday / calorieGoal, 1);
 
   return (
     <>
@@ -138,48 +139,45 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(100).springify()}
           style={styles.header}
         >
-          <View style={styles.greetingContainer}>
+          <View style={styles.topRow}>
             <View style={styles.greetingTextContainer}>
               <Text style={styles.greeting}>Welcome back!</Text>
-              <Text style={styles.userName}>{userName || 'Guest'}</Text>
               <Text style={styles.subtitle}>
                 Let's track your nutrition today
               </Text>
             </View>
-            <View style={styles.headerRight}>
-              {/* Scan Badge */}
-              {user?.scans_remaining !== undefined && (
-                <Pressable
-                  style={styles.tokenBadge}
-                  onPress={() => setPurchaseModalVisible(true)}
-                >
-                  <Ionicons name='flash' size={14} color={COLORS.accent} />
-                  <Text style={styles.tokenText}>{user.scans_remaining}</Text>
-                  <Ionicons
-                    name='add-circle'
-                    size={16}
-                    color={COLORS.accent}
-                    style={{ marginLeft: 4 }}
+            <Pressable
+              style={styles.avatarContainer}
+              onPress={() => router.push('/profile')}
+            >
+              <View style={styles.avatar}>
+                {user?.profile_picture_url ? (
+                  <Image
+                    source={{ uri: user.profile_picture_url }}
+                    style={styles.avatarImage}
                   />
-                </Pressable>
-              )}
-              <Pressable
-                style={styles.avatarContainer}
-                onPress={() => router.push('/profile')}
-              >
-                <View style={styles.avatar}>
-                  {userName && user?.profile_picture_url ? (
-                    <Image
-                      source={{ uri: user.profile_picture_url }}
-                      style={styles.avatarImage}
-                    />
-                  ) : (
-                    <Ionicons name='person' size={24} color={COLORS.white} />
-                  )}
-                </View>
-              </Pressable>
-            </View>
+                ) : (
+                  <Ionicons name='person' size={24} color={COLORS.white} />
+                )}
+              </View>
+            </Pressable>
           </View>
+
+          {/* Conditional Scan Status */}
+          {user?.scans_remaining !== undefined && user.scans_remaining < 10 && (
+            <Pressable
+              style={styles.scanStatusBanner}
+              onPress={() => setPurchaseModalVisible(true)}
+            >
+              <View style={styles.scanBadge}>
+                <Ionicons name='flash' size={12} color={COLORS.accent} />
+                <Text style={styles.scanBadgeText}>{user.scans_remaining}</Text>
+              </View>
+              <Text style={styles.scanStatusText}>
+                AI Analysis Scans remaining. Tap to add more.
+              </Text>
+            </Pressable>
+          )}
         </Animated.View>
 
         <Animated.View
@@ -189,8 +187,19 @@ export default function HomeScreen() {
           <ProgressRing
             progress={progress}
             current={totalToday}
-            target={2000}
+            target={calorieGoal}
           />
+          <Pressable
+            style={styles.editGoalBtn}
+            onPress={() => router.push('/profile')} // Or a dedicated modal
+          >
+            <Ionicons
+              name='settings-outline'
+              size={16}
+              color={COLORS.secondary}
+            />
+            <Text style={styles.editGoalText}>Adjust Goal</Text>
+          </Pressable>
         </Animated.View>
 
         <Animated.View
@@ -275,44 +284,48 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
-  greetingContainer: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
   },
   greetingTextContainer: {
     flex: 1,
   },
-  headerRight: {
+  scanStatusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
   },
-  tokenBadge: {
+  scanBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     gap: 4,
   },
-  tokenText: {
+  scanBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: COLORS.accent,
+  },
+  scanStatusText: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.white,
+    fontWeight: '500',
   },
   greeting: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 4,
     fontWeight: '500',
-  },
-  userName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
@@ -338,6 +351,21 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     ...SHADOWS.medium,
+  },
+  editGoalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: COLORS.bg,
+  },
+  editGoalText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.secondary,
   },
   actions: {
     flexDirection: 'row',
