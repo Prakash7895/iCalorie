@@ -25,7 +25,8 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
-import { scanImage, saveLog } from '@/lib/api';
+import { scanImage, deleteLog } from '@/lib/api';
+import { SHADOWS } from '@/constants/colors';
 import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window');
@@ -39,6 +40,7 @@ const COLORS = {
   error: '#FF7675',
   border: '#DFE6E9',
   shadow: '#2D3436',
+  white: '#FFFFFF',
 };
 
 type FoodItem = {
@@ -56,6 +58,8 @@ export default function ResultsScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
+  const [logId, setLogId] = useState<number | null>(null);
+  const [macros, setMacros] = useState({ protein: 0, carbs: 0, fat: 0 });
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -88,6 +92,20 @@ export default function ResultsScreen() {
         typeof data.total_calories === 'number' ? data.total_calories : null
       );
       setPhotoUrl(data.photo_url ?? null);
+      setLogId(data.log_id ?? null);
+
+      // Calculate total macros
+      if (Array.isArray(data.items)) {
+        const m = data.items.reduce(
+          (acc: any, curr: any) => ({
+            protein: acc.protein + (curr.protein_g || 0),
+            carbs: acc.carbs + (curr.carbs_g || 0),
+            fat: acc.fat + (curr.fat_g || 0),
+          }),
+          { protein: 0, carbs: 0, fat: 0 }
+        );
+        setMacros(m);
+      }
 
       // Success animation pulse
       totalScale.value = withSequence(withSpring(1.2), withSpring(1));
@@ -144,10 +162,39 @@ export default function ResultsScreen() {
     transform: [{ scale: totalScale.value }],
   }));
 
-  const handleSave = async () => {
-    // The meal is already logged by the backend in the scan endpoint.
-    // We just return home.
+  const handleDone = async () => {
     router.push('/');
+  };
+
+  const handleDiscard = async () => {
+    if (!logId) {
+      router.push('/capture');
+      return;
+    }
+
+    Alert.alert(
+      'Discard Scan?',
+      'This will delete the meal log and return to capture.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await deleteLog(logId);
+              router.push('/capture');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete log');
+              router.push('/capture');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -212,6 +259,31 @@ export default function ResultsScreen() {
             {total !== null ? total : '--'}
             <Text style={styles.unit}> kcal</Text>
           </Animated.Text>
+
+          {total !== null && (
+            <View style={styles.macrosSummary}>
+              <View style={styles.macroItemHeader}>
+                <Text style={styles.macroValueHeader}>
+                  {Math.round(macros.protein)}g
+                </Text>
+                <Text style={styles.macroLabelHeader}>Protein</Text>
+              </View>
+              <View style={styles.macroDivider} />
+              <View style={styles.macroItemHeader}>
+                <Text style={styles.macroValueHeader}>
+                  {Math.round(macros.carbs)}g
+                </Text>
+                <Text style={styles.macroLabelHeader}>Carbs</Text>
+              </View>
+              <View style={styles.macroDivider} />
+              <View style={styles.macroItemHeader}>
+                <Text style={styles.macroValueHeader}>
+                  {Math.round(macros.fat)}g
+                </Text>
+                <Text style={styles.macroLabelHeader}>Fat</Text>
+              </View>
+            </View>
+          )}
         </Animated.View>
 
         {/* Error Message */}
@@ -249,12 +321,12 @@ export default function ResultsScreen() {
                   {item.grams && (
                     <Text style={styles.itemDetail}>{item.grams}g</Text>
                   )}
-                  {item.confidence && (
-                    <View style={styles.confidenceTag}>
-                      <Text style={styles.confidenceText}>
-                        {Math.round(item.confidence * 100)}% match
-                      </Text>
-                    </View>
+                  {item.protein_g !== undefined && (
+                    <Text style={styles.itemMacroSplit}>
+                      P: {Math.round(item.protein_g)}g • C:{' '}
+                      {Math.round(item.carbs_g || 0)}g • F:{' '}
+                      {Math.round(item.fat_g || 0)}g
+                    </Text>
                   )}
                 </View>
               </View>
@@ -273,7 +345,7 @@ export default function ResultsScreen() {
           )}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* Bottom Action Bar */}
@@ -284,27 +356,26 @@ export default function ResultsScreen() {
         <BlurView intensity={80} tint='light' style={styles.blurContainer}>
           <Pressable
             style={styles.secondaryBtn}
-            onPress={() => router.push('/capture')}
+            onPress={handleDiscard}
             disabled={loading}
           >
-            <Ionicons
-              name='camera-reverse-outline'
-              size={24}
-              color={COLORS.secondary}
-            />
+            <View style={styles.discardContent}>
+              <Ionicons name='trash-outline' size={22} color={COLORS.error} />
+              <Text style={styles.discardText}>Discard</Text>
+            </View>
           </Pressable>
 
           <Pressable
             style={[styles.primaryBtn, loading && styles.disabledBtn]}
-            onPress={handleSave}
+            onPress={handleDone}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color='#FFF' />
             ) : (
               <>
-                <Text style={styles.primaryBtnText}>Save Log</Text>
-                <Ionicons name='arrow-forward' size={20} color='#FFF' />
+                <Text style={styles.primaryBtnText}>Done</Text>
+                <Ionicons name='checkmark-circle' size={22} color='#FFF' />
               </>
             )}
           </Pressable>
@@ -320,7 +391,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   scrollContent: {
-    paddingBottom: 180, // Space for action bar (66px) + tab bar (70px) + spacing
+    paddingBottom: 60,
   },
   imageContainer: {
     height: 300,
@@ -424,7 +495,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   totalValue: {
-    fontSize: 42,
+    fontSize: 48,
     fontWeight: '800',
     color: COLORS.primary,
   },
@@ -432,6 +503,36 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: COLORS.secondary,
+  },
+  macrosSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 16,
+    ...SHADOWS.small,
+  },
+  macroItemHeader: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  macroValueHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  macroLabelHeader: {
+    fontSize: 11,
+    color: COLORS.secondary,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  macroDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: COLORS.border,
   },
   listContainer: {
     padding: 20,
@@ -483,6 +584,12 @@ const styles = StyleSheet.create({
   itemDetail: {
     fontSize: 13,
     color: COLORS.secondary,
+    fontWeight: '500',
+  },
+  itemMacroSplit: {
+    fontSize: 12,
+    color: COLORS.secondary,
+    opacity: 0.8,
   },
   confidenceTag: {
     backgroundColor: '#F0F3F4',
@@ -553,36 +660,49 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     padding: 8,
     backgroundColor:
       Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : undefined,
   },
   secondaryBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F1F2F6',
+    flex: 0.4,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FFF1F1',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#FFEFEF',
+  },
+  discardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  discardText: {
+    color: COLORS.error,
+    fontWeight: '700',
+    fontSize: 15,
   },
   primaryBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 25,
+    flex: 0.6,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: COLORS.accent,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    ...SHADOWS.medium,
   },
   disabledBtn: {
     opacity: 0.7,
   },
   primaryBtnText: {
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
 });

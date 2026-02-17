@@ -8,11 +8,12 @@ import {
   View,
   Dimensions,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { getMealLog, MealLog } from '@/lib/api';
+import { getMealLog, MealLog, deleteLog } from '@/lib/api';
 import { COLORS, SHADOWS } from '@/constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -37,6 +38,26 @@ export default function MealDetailScreen() {
     }
     fetchMeal();
   }, [id]);
+
+  const handleDelete = async () => {
+    if (!id || !meal) return;
+
+    Alert.alert('Delete Meal Log?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteLog(id);
+            router.back();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete meal log');
+          }
+        },
+      },
+    ]);
+  };
 
   if (loading) {
     return (
@@ -163,9 +184,14 @@ export default function MealDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Close button for non-stack navigation or just extra exit point */}
+      {/* Close button */}
       <Pressable style={styles.floatingClose} onPress={() => router.back()}>
         <Ionicons name='close' size={24} color={COLORS.white} />
+      </Pressable>
+
+      {/* Delete button */}
+      <Pressable style={styles.floatingDelete} onPress={handleDelete}>
+        <Ionicons name='trash-outline' size={22} color='#FFF' />
       </Pressable>
     </View>
   );
@@ -349,5 +375,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
+  },
+  floatingDelete: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+    ...SHADOWS.large,
   },
 });

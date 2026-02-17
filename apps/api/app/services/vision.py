@@ -154,11 +154,18 @@ JSON schema:
         # 2. Get Grams
         grams = get_portion_grams(portion_str)
 
-        # 3. Get USDA Nutrition (kcal/100g)
-        kcal_per_100g = await get_usda_nutrition(normalized_name)
+        # 3. Get USDA Nutrition (kcal, protein, carbs, fat per 100g)
+        nutrition = await get_usda_nutrition(normalized_name)
+        kcal_per_100g = nutrition["kcal"]
 
-        # 4. Calculate Total Calories
+        # 4. Calculate Total Calories and Macros
         total_kcal = calculate_calories(grams, kcal_per_100g, cooking_style)
+
+        # Scale macros based on grams
+        scale = grams / 100.0
+        protein = round(nutrition["protein"] * scale, 1)
+        carbs = round(nutrition["carbs"] * scale, 1)
+        fat = round(nutrition["fat"] * scale, 1)
 
         items.append(
             FoodItem(
@@ -170,9 +177,9 @@ JSON schema:
                 confidence=item.get("confidence"),
                 notes=notes,
                 # MVP: Estimate macros roughly if needed, or leave None
-                protein_g=None,
-                carbs_g=None,
-                fat_g=None,
+                protein_g=protein,
+                carbs_g=carbs,
+                fat_g=fat,
             )
         )
     return items

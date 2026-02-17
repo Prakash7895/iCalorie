@@ -61,14 +61,15 @@ def get_portion_grams(portion_str: str) -> float:
     return 150.0  # Default fallback
 
 
-async def get_usda_nutrition(food_name: str) -> float:
+async def get_usda_nutrition(food_name: str) -> Dict[str, float]:
     """
-    Fetches kcal per 100g from USDA API.
-    Returns 0.0 if not found or API key missing.
+    Fetches nutrition data (kcal, protein, carbs, fat) per 100g from USDA API.
+    Returns 0.0 for all values if not found or API key missing.
     """
+    defaults = {"kcal": 0.0, "protein": 0.0, "carbs": 0.0, "fat": 0.0}
     if not USDA_API_KEY:
         print("WARNING: USDA_API_KEY not set")
-        return 0.0
+        return defaults
 
     try:
         async with httpx.AsyncClient() as client:
@@ -78,30 +79,38 @@ async def get_usda_nutrition(food_name: str) -> float:
                     "api_key": USDA_API_KEY,
                     "query": food_name,
                     "pageSize": 1,
-                    # "dataType": ["Foundation", "SR Legacy"],
                 },
                 timeout=5.0,
             )
             data = response.json()
 
             if not data.get("foods"):
-                return 0.0
+                return defaults
 
             food = data["foods"][0]
             nutrients = food.get("foodNutrients", [])
+            result = defaults.copy()
 
-            # Find Energy (Atwater General Factors) or Energy (Atwater Specific Factors) or Energy
-            # Nutrient ID 2047: Energy (Atwater Specific Factors)
-            # Nutrient ID 2048: Energy (Atwater General Factors)
-            # Nutrient ID 1008: Energy (kcal)
             for nutrient in nutrients:
-                if nutrient.get("nutrientId") in [1008, 2047, 2048]:
-                    return float(nutrient.get("value", 0.0))
+                nid = nutrient.get("nutrientId")
+                val = float(nutrient.get("value", 0.0))
+                # 1008, 2047, 2048: Energy (kcal)
+                if nid in [1008, 2047, 2048]:
+                    result["kcal"] = val
+                # 1003: Protein
+                elif nid == 1003:
+                    result["protein"] = val
+                # 1005: Carbohydrate, by difference
+                elif nid == 1005:
+                    result["carbs"] = val
+                # 1004: Total lipid (fat)
+                elif nid == 1004:
+                    result["fat"] = val
 
-            return 0.0
+            return result
     except Exception as e:
         print(f"USDA API Error: {e}")
-        return 0.0
+        return defaults
 
 
 def calculate_calories(

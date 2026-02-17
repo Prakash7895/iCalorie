@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Pressable,
@@ -78,8 +79,19 @@ export default function LogScreen() {
 
   useEffect(() => {
     fetchUserData();
+  }, []);
+
+  useEffect(() => {
     fetchLog();
   }, [fetchLog]);
+
+  // Refresh data when screen comes into focus (e.g., after deleting a meal)
+  useFocusEffect(
+    useCallback(() => {
+      fetchLog();
+      fetchUserData();
+    }, [fetchLog])
+  );
 
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const totalCalories = logs.reduce(

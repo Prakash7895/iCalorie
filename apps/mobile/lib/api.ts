@@ -83,6 +83,14 @@ export async function saveLog(payload: LogRequest) {
   return res.json();
 }
 
+export async function deleteLog(id: number | string) {
+  const res = await authenticatedFetch(`${API_BASE_URL}/log/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Delete log failed: ${res.status}`);
+  return res.json();
+}
+
 export async function getLog(date?: string) {
   const url = date
     ? `${API_BASE_URL}/log?date=${encodeURIComponent(date)}`

@@ -156,3 +156,22 @@ async def get_meal_log(
         "plate_size_cm": log.plate_size_cm,
         "created_at": log.created_at.isoformat(),
     }
+
+
+@router.delete("/{log_id}")
+async def delete_meal_log(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    log = (
+        db.query(MealLog)
+        .filter(MealLog.id == log_id, MealLog.user_id == current_user.id)
+        .first()
+    )
+    if not log:
+        return {"error": "Log not found"}, 404
+
+    db.delete(log)
+    db.commit()
+    return {"status": "ok"}
