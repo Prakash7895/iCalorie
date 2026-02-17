@@ -11,9 +11,17 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedScrollHandler,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { getLog, getSummary, API_BASE_URL } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { authenticatedFetch } from '@/lib/authFetch';
@@ -40,6 +48,12 @@ export default function HomeScreen() {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const scrollY = useSharedValue(0);
+
+  const HEADER_MAX_HEIGHT = user?.scans_remaining < 10 ? 190 : 130;
+  const HEADER_MIN_HEIGHT = 95;
+  const SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+  const TOP_PADDING = user?.scans_remaining < 10 ? 55 : 15;
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -138,17 +152,176 @@ export default function HomeScreen() {
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const progress = Math.min(totalToday / calorieGoal, 1);
 
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const height = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE],
+      [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+      Extrapolation.CLAMP
+    );
+
+    const paddingTop = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE],
+      [35, TOP_PADDING],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      height,
+      paddingTop,
+    };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE * 0.5],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+
+    const translateY = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE],
+      [0, -20],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  const subtitleContainerAnimatedStyle = useAnimatedStyle(() => {
+    const height = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE * 0.5],
+      [20, 0],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      height,
+      overflow: 'hidden',
+    };
+  });
+
+  const titleAnimatedStyle = useAnimatedStyle(() => {
+    const fontSize = interpolate(
+      scrollY.value,
+      [0, SCROLL_DISTANCE],
+      [16, 24],
+      Extrapolation.CLAMP
+    );
+
+    const fontWeight =
+      interpolate(
+        scrollY.value,
+        [0, SCROLL_DISTANCE],
+        [500, 700],
+        Extrapolation.CLAMP
+      ) > 600
+        ? '700'
+        : '500';
+
+    return {
+      fontSize,
+      fontWeight: fontWeight as any,
+    };
+  });
+
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
     const index = Math.round(scrollOffset / (SCREEN_WIDTH - 40));
     setCarouselIndex(index);
   };
 
+  // Header Component
+  const HomeHeader = () => {
+    return (
+      <Animated.View style={[styles.fixedHeader, headerAnimatedStyle]}>
+        <View style={styles.headerContent}>
+          <View style={styles.topRow}>
+            <View style={styles.greetingTextContainer}>
+              <Animated.Text style={[styles.greeting, titleAnimatedStyle]}>
+                Welcome back!
+              </Animated.Text>
+              <Animated.View
+                style={[contentAnimatedStyle, subtitleContainerAnimatedStyle]}
+              >
+                <Text style={styles.subtitle}>
+                  Let's track your nutrition today
+                </Text>
+              </Animated.View>
+            </View>
+            <Pressable
+              style={styles.fixedAvatarContainer}
+              onPress={() => router.push('/profile')}
+            >
+              <View style={styles.fixedAvatar}>
+                {user?.profile_picture_url ? (
+                  <Image
+                    source={{ uri: user.profile_picture_url }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Ionicons name='person' size={24} color={COLORS.white} />
+                )}
+              </View>
+            </Pressable>
+          </View>
+
+          <Animated.View style={contentAnimatedStyle}>
+            {/* Conditional Scan Status */}
+            {user?.scans_remaining !== undefined &&
+              user.scans_remaining < 10 && (
+                <Pressable
+                  style={styles.scanStatusBanner}
+                  onPress={() => setPurchaseModalVisible(true)}
+                >
+                  <View style={styles.scanBadge}>
+                    <Ionicons name='flash' size={12} color={COLORS.accent} />
+                    <Text style={styles.scanBadgeText}>
+                      {user.scans_remaining}
+                    </Text>
+                  </View>
+                  <Text style={styles.scanStatusText}>
+                    AI Scans remaining. Tap to add more.
+                  </Text>
+                </Pressable>
+              )}
+          </Animated.View>
+        </View>
+      </Animated.View>
+    );
+  };
+
   return (
     <>
-      <ScrollView
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          header: () => <HomeHeader />,
+          headerTransparent: true,
+        }}
+      />
+
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         style={styles.screen}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: HEADER_MAX_HEIGHT + 20 },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -162,51 +335,6 @@ export default function HomeScreen() {
           />
         }
       >
-        <Animated.View
-          entering={FadeInDown.delay(100).springify()}
-          style={styles.header}
-        >
-          <View style={styles.topRow}>
-            <View style={styles.greetingTextContainer}>
-              <Text style={styles.greeting}>Welcome back!</Text>
-              <Text style={styles.subtitle}>
-                Let's track your nutrition today
-              </Text>
-            </View>
-            <Pressable
-              style={styles.avatarContainer}
-              onPress={() => router.push('/profile')}
-            >
-              <View style={styles.avatar}>
-                {user?.profile_picture_url ? (
-                  <Image
-                    source={{ uri: user.profile_picture_url }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <Ionicons name='person' size={24} color={COLORS.white} />
-                )}
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Conditional Scan Status */}
-          {user?.scans_remaining !== undefined && user.scans_remaining < 10 && (
-            <Pressable
-              style={styles.scanStatusBanner}
-              onPress={() => setPurchaseModalVisible(true)}
-            >
-              <View style={styles.scanBadge}>
-                <Ionicons name='flash' size={12} color={COLORS.accent} />
-                <Text style={styles.scanBadgeText}>{user.scans_remaining}</Text>
-              </View>
-              <Text style={styles.scanStatusText}>
-                AI Analysis Scans remaining. Tap to add more.
-              </Text>
-            </Pressable>
-          )}
-        </Animated.View>
-
         <View style={styles.carouselContainer}>
           <ScrollView
             horizontal
@@ -316,7 +444,7 @@ export default function HomeScreen() {
             <Text style={styles.emptyText}>No meals tracked today yet.</Text>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Token Purchase Modal */}
       <TokenPurchaseModal
@@ -338,19 +466,25 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 100,
     gap: 16,
   },
-  header: {
-    backgroundColor: COLORS.accent,
-    marginHorizontal: -20,
-    marginTop: -60,
-    paddingTop: 60,
+  scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 100,
+    gap: 16,
+  },
+  fixedHeader: {
+    backgroundColor: COLORS.accent,
+    paddingTop: 35,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
+    ...SHADOWS.medium,
+  },
+  headerContent: {
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    flex: 1,
   },
   carouselContainer: {
     marginVertical: 10,
@@ -421,10 +555,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
   },
   greetingTextContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   scanStatusBanner: {
     flexDirection: 'row',
@@ -433,6 +567,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     gap: 12,
+    marginTop: 16,
   },
   scanBadge: {
     flexDirection: 'row',
@@ -455,14 +590,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 4,
     fontWeight: '500',
   },
   subtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+  fixedAvatarContainer: {
+    marginLeft: 16,
+  },
+  fixedAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    overflow: 'hidden',
   },
   avatarContainer: {
     marginLeft: 16,
@@ -552,6 +700,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
+    borderRadius: 22,
   },
 });
