@@ -20,6 +20,15 @@ export type ScanResponse = {
   log_id?: number;
 };
 
+export type MealLog = {
+  id: number;
+  items: FoodItem[];
+  total_calories: number;
+  photo_url?: string | null;
+  plate_size_cm?: number;
+  created_at: string;
+};
+
 export type LogRequest = {
   items: FoodItem[];
   total_calories?: number | null;
@@ -80,6 +89,12 @@ export async function getLog(date?: string) {
     : `${API_BASE_URL}/log`;
   const res = await authenticatedFetch(url);
   if (!res.ok) throw new Error(`Get log failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getMealLog(id: number | string): Promise<MealLog> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/log/${id}`);
+  if (!res.ok) throw new Error(`Get meal log failed: ${res.status}`);
   return res.json();
 }
 

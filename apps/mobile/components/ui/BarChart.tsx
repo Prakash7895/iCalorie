@@ -18,29 +18,39 @@ interface BarChartProps {
   data: { date: string; total_calories: number }[];
   target: number;
   containerStyle?: any;
+  today?: string;
 }
 
-export function BarChart({ data, target, containerStyle }: BarChartProps) {
+export function BarChart({
+  data,
+  target,
+  containerStyle,
+  today: currentDay,
+}: BarChartProps) {
   const maxCalories = Math.max(...data.map((d) => d.total_calories), target, 1);
 
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={styles.title}>Weekly Trends</Text>
       <View style={styles.chartArea}>
-        {data.map((item, index) => (
-          <Bar
-            key={item.date}
-            value={item.total_calories}
-            maxValue={maxCalories}
-            target={target}
-            label={
-              new Date(item.date).toLocaleDateString('en-US', {
-                weekday: 'short',
-              })[0]
-            }
-            delay={index * 100}
-          />
-        ))}
+        {data.map((item, index) => {
+          const isToday = item.date === currentDay;
+          return (
+            <Bar
+              key={item.date}
+              value={item.total_calories}
+              maxValue={maxCalories}
+              target={target}
+              isToday={isToday}
+              label={
+                new Date(item.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                })[0]
+              }
+              delay={index * 100}
+            />
+          );
+        })}
       </View>
     </View>
   );
@@ -52,12 +62,14 @@ function Bar({
   target,
   label,
   delay,
+  isToday,
 }: {
   value: number;
   maxValue: number;
   target: number;
   label: string;
   delay: number;
+  isToday?: boolean;
 }) {
   const height = useSharedValue(0);
   const targetHeight = (value / maxValue) * MAX_BAR_HEIGHT;
@@ -77,16 +89,22 @@ function Bar({
 
   return (
     <View style={styles.barWrapper}>
-      <View style={styles.barBackground}>
+      <View
+        style={[styles.barBackground, isToday && styles.todayBarBackground]}
+      >
         <Animated.View
           style={[
             styles.barFill,
             animatedStyle,
             isOverTarget && { backgroundColor: COLORS.error },
+            isToday && { opacity: 1 },
+            !isToday && value === 0 && { opacity: 0.3 },
           ]}
         />
       </View>
-      <Text style={styles.barLabel}>{label}</Text>
+      <Text style={[styles.barLabel, isToday && styles.todayLabel]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -137,5 +155,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.secondary,
     fontWeight: '600',
+  },
+  todayBarBackground: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(52, 199, 89, 0.4)',
+    backgroundColor: 'rgba(52, 199, 89, 0.05)',
+  },
+  todayLabel: {
+    color: COLORS.accent,
+    fontWeight: '800',
+    fontSize: 11,
   },
 });

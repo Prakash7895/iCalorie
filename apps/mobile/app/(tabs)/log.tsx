@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,9 +11,11 @@ import {
 import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { getLog } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '@/constants/colors';
 
 type LogItem = {
+  id: number;
   items?: { name: string; calories?: number; grams?: number }[];
   total_calories?: number;
   created_at?: string;
@@ -20,6 +23,7 @@ type LogItem = {
 };
 
 export default function LogScreen() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogItem[]>([]);
@@ -113,7 +117,14 @@ export default function LogScreen() {
               </View>
 
               {/* Content Card */}
-              <View style={styles.logCard}>
+              <Pressable
+                style={styles.logCard}
+                onPress={() => {
+                  if (log.id) {
+                    router.push(`/meal/${log.id}`);
+                  }
+                }}
+              >
                 <View style={styles.cardHeader}>
                   <View style={styles.mealBadge}>
                     <Ionicons
@@ -151,7 +162,7 @@ export default function LogScreen() {
                     </View>
                   ))}
                 </View>
-              </View>
+              </Pressable>
             </Animated.View>
           ))}
         </View>

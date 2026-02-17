@@ -113,6 +113,7 @@ class LogRequest(BaseModel):
     total_calories: Optional[float] = None
     photo_url: Optional[str] = None
     created_at: Optional[str] = None
+    plate_size_cm: Optional[float] = None
 
 
 class AndroidPurchaseRequest(BaseModel):

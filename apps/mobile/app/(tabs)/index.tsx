@@ -30,6 +30,8 @@ import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart } from '@/components/ui/BarChart';
 import TokenPurchaseModal from '@/components/TokenPurchaseModal';
+import ManualLogModal from '@/components/ManualLogModal';
+import HomeHeader from '@/components/HomeHeader';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function HomeScreen() {
   const [user, setUser] = useState<any>(null);
   const [totalToday, setTotalToday] = useState(0);
   const [recentMeals, setRecentMeals] = useState<
-    { name: string; kcal: number }[]
+    { id: number; name: string; kcal: number }[]
   >([]);
   const [loading, setLoading] = useState(false);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
@@ -46,14 +48,14 @@ export default function HomeScreen() {
     { date: string; total_calories: number }[]
   >([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [manualLogVisible, setManualLogVisible] = useState(false);
 
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const scrollY = useSharedValue(0);
 
-  const HEADER_MAX_HEIGHT = user?.scans_remaining < 10 ? 190 : 130;
-  const HEADER_MIN_HEIGHT = 95;
-  const SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
-  const TOP_PADDING = user?.scans_remaining < 10 ? 55 : 15;
+  const hasBanner =
+    user?.scans_remaining !== undefined && user.scans_remaining < 10;
+  const HEADER_MAX_HEIGHT = hasBanner ? 190 : 130;
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -120,6 +122,7 @@ export default function HomeScreen() {
       setTotalToday(Math.round(total));
       setRecentMeals(
         items.slice(0, 3).map((m: any, i: number) => ({
+          id: m.id,
           name: `Meal ${i + 1}`,
           kcal: Math.round(m.total_calories ?? 0),
         }))
@@ -135,7 +138,9 @@ export default function HomeScreen() {
   const fetchWeeklySummary = async () => {
     try {
       const data = await getSummary();
-      setWeeklySummary(data.summary);
+      // Ensure we have 7 days of data for accurate averaging
+      const summary = data.summary || [];
+      setWeeklySummary(summary);
     } catch (error) {
       console.error('Error fetching weekly summary:', error);
     }
@@ -143,6 +148,7 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Don't set global loading here to avoid full-screen spinner or blocking UI
       fetchUserData();
       fetchLog();
       fetchWeeklySummary();
@@ -151,6 +157,32 @@ export default function HomeScreen() {
 
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const progress = Math.min(totalToday / calorieGoal, 1);
+  const kcalRemaining = calorieGoal - totalToday;
+
+  // Calculate Weekly Insights
+  const { weeklyAvg, daysMetGoal } = useMemo(() => {
+    if (!weeklySummary || weeklySummary.length === 0) {
+      return { weeklyAvg: 0, daysMetGoal: 0 };
+    }
+    // Only count days that have passed or are today for the average
+    const relevantDays = weeklySummary.filter((day) => day.date <= today);
+    const sum = relevantDays.reduce((acc, day) => acc + day.total_calories, 0);
+    const avg =
+      relevantDays.length > 0 ? Math.round(sum / relevantDays.length) : 0;
+    const met = weeklySummary.filter(
+      (day) => day.total_calories <= calorieGoal && day.total_calories > 0
+    ).length;
+    return { weeklyAvg: avg, daysMetGoal: met };
+  }, [weeklySummary, calorieGoal, today]);
+
+  const handleProfilePress = useCallback(
+    () => router.push('/profile'),
+    [router]
+  );
+  const handleScanStatusPress = useCallback(
+    () => setPurchaseModalVisible(true),
+    []
+  );
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -158,158 +190,32 @@ export default function HomeScreen() {
     },
   });
 
-  const headerAnimatedStyle = useAnimatedStyle(() => {
-    const height = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE],
-      [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
-      Extrapolation.CLAMP
-    );
-
-    const paddingTop = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE],
-      [35, TOP_PADDING],
-      Extrapolation.CLAMP
-    );
-
-    return {
-      height,
-      paddingTop,
-    };
-  });
-
-  const contentAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE * 0.5],
-      [1, 0],
-      Extrapolation.CLAMP
-    );
-
-    const translateY = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE],
-      [0, -20],
-      Extrapolation.CLAMP
-    );
-
-    return {
-      opacity,
-      transform: [{ translateY }],
-    };
-  });
-
-  const subtitleContainerAnimatedStyle = useAnimatedStyle(() => {
-    const height = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE * 0.5],
-      [20, 0],
-      Extrapolation.CLAMP
-    );
-
-    return {
-      height,
-      overflow: 'hidden',
-    };
-  });
-
-  const titleAnimatedStyle = useAnimatedStyle(() => {
-    const fontSize = interpolate(
-      scrollY.value,
-      [0, SCROLL_DISTANCE],
-      [16, 24],
-      Extrapolation.CLAMP
-    );
-
-    const fontWeight =
-      interpolate(
-        scrollY.value,
-        [0, SCROLL_DISTANCE],
-        [500, 700],
-        Extrapolation.CLAMP
-      ) > 600
-        ? '700'
-        : '500';
-
-    return {
-      fontSize,
-      fontWeight: fontWeight as any,
-    };
-  });
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollOffset / (SCREEN_WIDTH - 40));
-    setCarouselIndex(index);
+    const index = Math.round(scrollOffset / SCREEN_WIDTH);
+    if (index !== carouselIndex) {
+      setCarouselIndex(index);
+    }
   };
 
-  // Header Component
-  const HomeHeader = () => {
-    return (
-      <Animated.View style={[styles.fixedHeader, headerAnimatedStyle]}>
-        <View style={styles.headerContent}>
-          <View style={styles.topRow}>
-            <View style={styles.greetingTextContainer}>
-              <Animated.Text style={[styles.greeting, titleAnimatedStyle]}>
-                Welcome back!
-              </Animated.Text>
-              <Animated.View
-                style={[contentAnimatedStyle, subtitleContainerAnimatedStyle]}
-              >
-                <Text style={styles.subtitle}>
-                  Let's track your nutrition today
-                </Text>
-              </Animated.View>
-            </View>
-            <Pressable
-              style={styles.fixedAvatarContainer}
-              onPress={() => router.push('/profile')}
-            >
-              <View style={styles.fixedAvatar}>
-                {user?.profile_picture_url ? (
-                  <Image
-                    source={{ uri: user.profile_picture_url }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <Ionicons name='person' size={24} color={COLORS.white} />
-                )}
-              </View>
-            </Pressable>
-          </View>
-
-          <Animated.View style={contentAnimatedStyle}>
-            {/* Conditional Scan Status */}
-            {user?.scans_remaining !== undefined &&
-              user.scans_remaining < 10 && (
-                <Pressable
-                  style={styles.scanStatusBanner}
-                  onPress={() => setPurchaseModalVisible(true)}
-                >
-                  <View style={styles.scanBadge}>
-                    <Ionicons name='flash' size={12} color={COLORS.accent} />
-                    <Text style={styles.scanBadgeText}>
-                      {user.scans_remaining}
-                    </Text>
-                  </View>
-                  <Text style={styles.scanStatusText}>
-                    AI Scans remaining. Tap to add more.
-                  </Text>
-                </Pressable>
-              )}
-          </Animated.View>
-        </View>
-      </Animated.View>
-    );
-  };
+  const renderHeader = useCallback(
+    () => (
+      <HomeHeader
+        user={user}
+        scrollY={scrollY}
+        onProfilePress={handleProfilePress}
+        onScanStatusPress={handleScanStatusPress}
+      />
+    ),
+    [user, scrollY, handleProfilePress, handleScanStatusPress]
+  );
 
   return (
     <>
       <Stack.Screen
         options={{
           headerShown: true,
-          header: () => <HomeHeader />,
+          header: renderHeader,
           headerTransparent: true,
         }}
       />
@@ -326,12 +232,22 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={() => {
-              fetchUserData();
-              fetchLog();
-              fetchWeeklySummary();
+            onRefresh={async () => {
+              setLoading(true);
+              try {
+                await Promise.all([
+                  fetchUserData(),
+                  fetchLog(),
+                  fetchWeeklySummary(),
+                ]);
+              } catch (error) {
+                console.error('Refresh failed:', error);
+              } finally {
+                setLoading(false);
+              }
             }}
             tintColor={COLORS.accent}
+            progressViewOffset={HEADER_MAX_HEIGHT}
           />
         }
       >
@@ -366,6 +282,27 @@ export default function HomeScreen() {
                     current={totalToday}
                     target={calorieGoal}
                   />
+                  <View style={styles.cardInsightRow}>
+                    <Ionicons
+                      name={
+                        kcalRemaining >= 0
+                          ? 'information-circle-outline'
+                          : 'warning-outline'
+                      }
+                      size={16}
+                      color={kcalRemaining >= 0 ? COLORS.accent : COLORS.error}
+                    />
+                    <Text
+                      style={[
+                        styles.cardInsightText,
+                        kcalRemaining < 0 && { color: COLORS.error },
+                      ]}
+                    >
+                      {kcalRemaining >= 0
+                        ? `${Math.round(kcalRemaining)} kcal remaining`
+                        : `Over by ${Math.abs(Math.round(kcalRemaining))} kcal`}
+                    </Text>
+                  </View>
                 </View>
               </View>
             </Animated.View>
@@ -380,8 +317,31 @@ export default function HomeScreen() {
                   <BarChart
                     data={weeklySummary}
                     target={calorieGoal}
+                    today={today}
                     containerStyle={styles.barChartContainer}
                   />
+                  <View style={styles.cardInsightRow}>
+                    <View style={styles.trendMetric}>
+                      <Ionicons
+                        name='stats-chart'
+                        size={14}
+                        color={COLORS.accent}
+                      />
+                      <Text style={styles.cardInsightText}>
+                        Avg: {weeklyAvg} kcal
+                      </Text>
+                    </View>
+                    <View style={styles.trendMetric}>
+                      <Ionicons
+                        name='checkmark-circle'
+                        size={14}
+                        color={COLORS.accent}
+                      />
+                      <Text style={styles.cardInsightText}>
+                        Met Goal: {daysMetGoal}/7 days
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             </Animated.View>
@@ -412,7 +372,7 @@ export default function HomeScreen() {
             title='Manual Log'
             variant='secondary'
             icon='add-circle'
-            onPress={() => router.push('/log')}
+            onPress={() => setManualLogVisible(true)}
             style={styles.actionBtn}
           />
         </Animated.View>
@@ -422,22 +382,26 @@ export default function HomeScreen() {
           {recentMeals.length > 0 ? (
             recentMeals.map((meal, index) => (
               <Animated.View
-                key={index}
+                key={meal.id || index}
                 entering={FadeInUp.delay(600 + index * 100).springify()}
-                style={styles.mealCard}
               >
-                <View style={styles.mealIcon}>
-                  <Ionicons
-                    name='fast-food-outline'
-                    size={20}
-                    color={COLORS.accent}
-                  />
-                </View>
-                <View style={styles.mealInfo}>
-                  <Text style={styles.mealName}>{meal.name}</Text>
-                  <Text style={styles.mealTime}>Today</Text>
-                </View>
-                <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+                <Pressable
+                  style={styles.mealCard}
+                  onPress={() => router.push(`/meal/${meal.id}`)}
+                >
+                  <View style={styles.mealIcon}>
+                    <Ionicons
+                      name='fast-food-outline'
+                      size={20}
+                      color={COLORS.accent}
+                    />
+                  </View>
+                  <View style={styles.mealInfo}>
+                    <Text style={styles.mealName}>{meal.name}</Text>
+                    <Text style={styles.mealTime}>Today</Text>
+                  </View>
+                  <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+                </Pressable>
               </Animated.View>
             ))
           ) : (
@@ -454,6 +418,15 @@ export default function HomeScreen() {
         onPurchaseComplete={() => {
           // Refresh user data to get updated token balance
           fetchUserData();
+        }}
+      />
+      <ManualLogModal
+        visible={manualLogVisible}
+        onClose={() => setManualLogVisible(false)}
+        onSuccess={() => {
+          fetchLog();
+          fetchUserData();
+          fetchWeeklySummary();
         }}
       />
     </>
@@ -474,26 +447,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     gap: 16,
   },
-  fixedHeader: {
-    backgroundColor: COLORS.accent,
-    paddingTop: 35,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    ...SHADOWS.medium,
-  },
-  headerContent: {
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    flex: 1,
-  },
   carouselContainer: {
     marginVertical: 10,
     marginHorizontal: -20,
-    overflow: 'visible', // Allow shadows to be visible
+    overflow: 'visible',
   },
   carouselContent: {
     paddingHorizontal: 0,
-    paddingBottom: 20, // Space for shadows
+    paddingBottom: 20,
   },
   carouselCard: {
     paddingHorizontal: 20,
@@ -501,7 +462,7 @@ const styles = StyleSheet.create({
   },
   ringCard: {
     backgroundColor: COLORS.white,
-    padding: 24,
+    padding: 20,
     borderRadius: 24,
     alignItems: 'center',
     ...SHADOWS.medium,
@@ -533,7 +494,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     shadowOpacity: 0,
     elevation: 0,
-    padding: 24,
+    padding: 20,
+    paddingBottom: 10,
+  },
+  cardInsightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  cardInsightText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.secondary,
+  },
+  trendMetric: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
   },
   pagination: {
     flexDirection: 'row',
@@ -550,67 +530,6 @@ const styles = StyleSheet.create({
   activeDot: {
     width: 16,
     backgroundColor: COLORS.accent,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  greetingTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  scanStatusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
-    borderRadius: 12,
-    gap: 12,
-    marginTop: 16,
-  },
-  scanBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  scanBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.accent,
-  },
-  scanStatusText: {
-    flex: 1,
-    fontSize: 12,
-    color: COLORS.white,
-    fontWeight: '500',
-  },
-  greeting: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  fixedAvatarContainer: {
-    marginLeft: 16,
-  },
-  fixedAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    overflow: 'hidden',
   },
   avatarContainer: {
     marginLeft: 16,
