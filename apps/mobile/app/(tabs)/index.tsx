@@ -29,7 +29,7 @@ export default function HomeScreen() {
   >([]);
   const [loading, setLoading] = useState(false);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
-  const [tokenBalance, setTokenBalance] = useState(0);
+  const [scanBalance, setScanBalance] = useState(0);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -73,7 +73,7 @@ export default function HomeScreen() {
         const userData = await storage.getUserData();
         if (userData) {
           setUser(userData);
-          setTokenBalance(userData.ai_tokens || 0);
+          setScanBalance(userData.scans_remaining || 0);
           await storage.setUserData(userData);
           if (userData?.name) {
             setUserName(userData.name);
@@ -143,14 +143,14 @@ export default function HomeScreen() {
               </Text>
             </View>
             <View style={styles.headerRight}>
-              {/* Token Badge */}
-              {user?.ai_tokens !== undefined && (
+              {/* Scan Badge */}
+              {user?.scans_remaining !== undefined && (
                 <Pressable
                   style={styles.tokenBadge}
                   onPress={() => setPurchaseModalVisible(true)}
                 >
                   <Ionicons name='flash' size={14} color={COLORS.accent} />
-                  <Text style={styles.tokenText}>{user.ai_tokens}</Text>
+                  <Text style={styles.tokenText}>{user.scans_remaining}</Text>
                   <Ionicons
                     name='add-circle'
                     size={16}
@@ -241,7 +241,7 @@ export default function HomeScreen() {
       <TokenPurchaseModal
         visible={purchaseModalVisible}
         onClose={() => setPurchaseModalVisible(false)}
-        currentBalance={tokenBalance}
+        currentBalance={scanBalance || user?.scans_remaining || 0}
         onPurchaseComplete={() => {
           // Refresh user data to get updated token balance
           fetchUserData();

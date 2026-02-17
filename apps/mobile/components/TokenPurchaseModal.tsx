@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getTokenPricing, PricingInfo, TokenPackage } from '@/lib/api';
+import { getScanPricing, PricingInfo, TokenPackage } from '@/lib/api';
 
 const COLORS = {
   background: '#0A0E27',
@@ -53,7 +53,7 @@ export default function TokenPurchaseModal({
   const loadPricing = async () => {
     try {
       setLoading(true);
-      const data = await getTokenPricing();
+      const data = await getScanPricing();
       console.log('Pricing data loaded:', JSON.stringify(data, null, 2));
       console.log('Packages:', data.packages);
       setPricing(data);
@@ -172,7 +172,7 @@ export default function TokenPurchaseModal({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Buy Scan Tokens</Text>
+              <Text style={styles.title}>Buy Scans</Text>
               <Text style={styles.subtitle}>
                 Current balance: {currentBalance} scans
               </Text>
@@ -215,8 +215,8 @@ export default function TokenPurchaseModal({
                     color={COLORS.textSecondary}
                   />
                   <Text style={styles.footerText}>
-                    Tokens never expire and can be used anytime. Get 1 free scan
-                    daily!
+                    Scans never expire and can be used anytime. Your balance is
+                    restored to 5 scans daily if it falls below that!
                   </Text>
                 </View>
               </>

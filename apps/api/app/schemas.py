@@ -20,7 +20,7 @@ class UserResponse(BaseModel):
     name: Optional[str]
     profile_picture_url: Optional[str] = None
     created_at: str
-    ai_tokens: int = 0
+    scans_remaining: int = 0
 
     class Config:
         from_attributes = True
@@ -50,7 +50,7 @@ class ChangePasswordRequest(BaseModel):
 
 
 class TokenBalanceResponse(BaseModel):
-    ai_tokens: int
+    scans_remaining: int
 
 
 class PurchaseTokensRequest(BaseModel):
@@ -102,7 +102,7 @@ class ScanResponse(BaseModel):
     items: List[FoodItem]
     total_calories: Optional[float] = None
     photo_url: Optional[str] = None
-    remaining_tokens: Optional[int] = None
+    scans_remaining: Optional[int] = None
 
 
 class ScanConfirmRequest(BaseModel):
@@ -131,7 +131,6 @@ class TokenPackage(BaseModel):
     """Token package information."""
 
     product_id: str
-    tokens: int
     scans: int
     price_usd: float
     savings_percent: int

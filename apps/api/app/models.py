@@ -24,14 +24,10 @@ class User(Base):
     profile_picture_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Token management
-    ai_tokens = Column(Integer, default=1, nullable=False)  # Current available tokens
-    total_purchased_tokens = Column(
-        Integer, default=0, nullable=False
-    )  # Lifetime purchased tokens
-    free_scan_used = Column(
-        Boolean, default=False, nullable=False
-    )  # True if daily free scan used
+    # Scan management
+    scans_remaining = Column(
+        Integer, default=5, nullable=False
+    )  # Current available scans (default to 5 free scans)
 
     # Relationship
     meal_logs = relationship("MealLog", back_populates="user")
@@ -79,7 +75,7 @@ class PurchaseReceipt(Base):
     receipt_token = Column(
         String, nullable=False, unique=True, index=True
     )  # Unique purchase token
-    tokens_added = Column(Integer, nullable=False)  # Number of scan tokens added
+    scans_added = Column(Integer, nullable=False)  # Number of scans added
     price_usd = Column(Float, nullable=True)  # Purchase price
     verified_at = Column(DateTime, default=datetime.utcnow)
 

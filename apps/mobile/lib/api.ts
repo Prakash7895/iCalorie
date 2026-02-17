@@ -15,7 +15,7 @@ export type ScanResponse = {
   items: FoodItem[];
   total_calories?: number;
   photo_url?: string | null;
-  remaining_tokens?: number;
+  scans_remaining?: number;
 };
 
 export type LogRequest = {
@@ -27,7 +27,6 @@ export type LogRequest = {
 
 export type TokenPackage = {
   product_id: string;
-  tokens: number;
   scans: number;
   price_usd: number;
   savings_percent: number;
@@ -96,17 +95,17 @@ export async function getLog(date?: string) {
   return res.json();
 }
 
-export type TokenBalance = {
-  ai_tokens: number;
+export type ScanBalance = {
+  scans_remaining: number;
 };
 
-export async function getTokenBalance(): Promise<TokenBalance> {
+export async function getScanBalance(): Promise<ScanBalance> {
   const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens`);
-  if (!res.ok) throw new Error(`Get token balance failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Get scan balance failed: ${res.status}`);
   return res.json();
 }
 
-export async function purchaseTokens(amount: number): Promise<any> {
+export async function purchaseScans(amount: number): Promise<any> {
   const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens/purchase`, {
     method: 'POST',
     headers: {
@@ -114,11 +113,11 @@ export async function purchaseTokens(amount: number): Promise<any> {
     },
     body: JSON.stringify({ amount }),
   });
-  if (!res.ok) throw new Error(`Purchase tokens failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Purchase scans failed: ${res.status}`);
   return res.json();
 }
 
-export async function getTokenPricing(): Promise<PricingInfo> {
+export async function getScanPricing(): Promise<PricingInfo> {
   const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens/pricing`);
   if (!res.ok) throw new Error(`Get pricing failed: ${res.status}`);
   return res.json();

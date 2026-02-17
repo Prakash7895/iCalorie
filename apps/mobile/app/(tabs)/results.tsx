@@ -92,10 +92,10 @@ export default function ResultsScreen() {
       // Success animation pulse
       totalScale.value = withSequence(withSpring(1.2), withSpring(1));
 
-      // Show remaining tokens if available
-      if (data.remaining_tokens !== undefined) {
+      // Show remaining scans if available
+      if (data.scans_remaining !== undefined) {
         // Optional: you can show a toast or subtle notification here
-        console.log(`Remaining tokens: ${data.remaining_tokens}`);
+        console.log(`Remaining scans: ${data.scans_remaining}`);
       }
     } catch (err: any) {
       console.log(err);
@@ -105,14 +105,14 @@ export default function ResultsScreen() {
         err?.message?.includes('402') ||
         err?.message?.includes('Insufficient')
       ) {
-        setErrorText('Out of free scans for today');
+        setErrorText('Insufficient scans');
         Alert.alert(
-          '🪙 Out of Free Scans',
-          "You've used your free scan for today. Your tokens will reset in 24 hours, or you can purchase more tokens now to continue scanning.",
+          '⚡ Out of Scans',
+          "You've run out of scans. Your balance will be restored to 5 scans daily if it falls below that, or you can purchase more scans now to continue scanning.",
           [
             { text: 'Wait for Reset', style: 'cancel' },
             {
-              text: 'Purchase Tokens',
+              text: 'Purchase Scans',
               onPress: () => {
                 Alert.alert(
                   'Coming Soon',

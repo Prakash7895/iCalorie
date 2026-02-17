@@ -25,8 +25,8 @@ from app.services.auth import (
     decode_access_token,
 )
 from app.services.token_service import (
-    get_token_balance,
-    add_purchased_tokens,
+    get_scan_balance,
+    add_purchased_scans,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -66,7 +66,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             name=new_user.name,
             profile_picture_url=get_s3_url(new_user.profile_picture_url),
             created_at=new_user.created_at.isoformat(),
-            ai_tokens=new_user.ai_tokens,
+            scans_remaining=new_user.scans_remaining,
         ),
     )
 
@@ -100,7 +100,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             name=user.name,
             profile_picture_url=get_s3_url(user.profile_picture_url),
             created_at=user.created_at.isoformat(),
-            ai_tokens=user.ai_tokens,
+            scans_remaining=user.scans_remaining,
         ),
     )
 
@@ -150,7 +150,7 @@ def get_me(
         name=current_user.name,
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
-        ai_tokens=current_user.ai_tokens,
+        scans_remaining=current_user.scans_remaining,
     )
 
 
@@ -173,7 +173,7 @@ def update_profile(
         name=current_user.name,
         profile_picture_url=current_user.profile_picture_url,
         created_at=current_user.created_at.isoformat(),
-        ai_tokens=current_user.ai_tokens,
+        scans_remaining=current_user.scans_remaining,
     )
 
 
@@ -229,7 +229,7 @@ async def upload_profile_picture(
         name=current_user.name,
         profile_picture_url=get_s3_url(current_user.profile_picture_url),
         created_at=current_user.created_at.isoformat(),
-        ai_tokens=current_user.ai_tokens,
+        scans_remaining=current_user.scans_remaining,
     )
 
 
@@ -240,7 +240,7 @@ def get_tokens(
 ):
     """Get current token balance and reset information."""
 
-    balance_info = get_token_balance(current_user)
+    balance_info = get_scan_balance(current_user)
     return TokenBalanceResponse(**balance_info)
 
 
@@ -264,7 +264,7 @@ def purchase_tokens(
     # 3. Then add tokens to user account
 
     # Placeholder: Add tokens directly (for testing/demo purposes)
-    updated_user = add_purchased_tokens(current_user, request.amount, db)
+    updated_user = add_purchased_scans(current_user, request.amount, db)
 
     return UserResponse(
         id=updated_user.id,
@@ -272,7 +272,7 @@ def purchase_tokens(
         name=updated_user.name,
         profile_picture_url=get_s3_url(updated_user.profile_picture_url),
         created_at=updated_user.created_at.isoformat(),
-        ai_tokens=updated_user.ai_tokens,
+        scans_remaining=updated_user.scans_remaining,
     )
 
 
@@ -345,26 +345,23 @@ def get_token_usage(
 @router.get("/tokens/pricing", response_model=PricingInfo)
 def get_token_pricing():
     """
-    Get available token packages and pricing information.
+    Get available scan packages and pricing information.
     """
     packages = [
         TokenPackage(
-            product_id="com.icalorie.tokens.3000",
-            tokens=3000,
+            product_id="com.icalorie.tokens.5",
             scans=5,
             price_usd=0.99,
             savings_percent=0,
         ),
         TokenPackage(
-            product_id="com.icalorie.tokens.9000",
-            tokens=9000,
+            product_id="com.icalorie.tokens.15",
             scans=15,
             price_usd=2.49,
             savings_percent=17,
         ),
         TokenPackage(
-            product_id="com.icalorie.tokens.24000",
-            tokens=24000,
+            product_id="com.icalorie.tokens.50",
             scans=50,
             price_usd=4.99,
             savings_percent=50,
@@ -451,9 +448,9 @@ def verify_android_purchase(
             detail=f"Unknown product ID: {request.product_id}",
         )
 
-    # Add tokens to user account
-    tokens_to_add = package["scans"]
-    updated_user = add_purchased_tokens(current_user, tokens_to_add, db)
+    # Add scans to user account
+    scans_to_add = package["scans"]
+    updated_user = add_purchased_scans(current_user, scans_to_add, db)
 
     # Save purchase receipt
     receipt = PurchaseReceipt(
@@ -461,7 +458,7 @@ def verify_android_purchase(
         platform="android",
         product_id=request.product_id,
         receipt_token=request.purchase_token,
-        tokens_added=tokens_to_add,
+        scans_added=scans_to_add,
         price_usd=package["price"],
     )
     db.add(receipt)
@@ -480,10 +477,5 @@ def verify_android_purchase(
         name=updated_user.name,
         profile_picture_url=get_s3_url(updated_user.profile_picture_url),
         created_at=updated_user.created_at.isoformat(),
-        ai_tokens=updated_user.ai_tokens,
-        last_token_reset=(
-            updated_user.last_token_reset.isoformat()
-            if updated_user.last_token_reset
-            else None
-        ),
+        scans_remaining=updated_user.scans_remaining,
     )

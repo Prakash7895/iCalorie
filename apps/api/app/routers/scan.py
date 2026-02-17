@@ -18,28 +18,36 @@ async def scan_plate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Scan a plate image and analyze food items. Requires 1 AI token."""
+    """Scan a plate image and analyze food items. Decrements 1 scan on success."""
 
-    if current_user.free_scan_used:
+    # Check if user has available scans
+    if current_user.scans_remaining <= 0:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail="Insufficient AI tokens. You've used your free scan for today. Please purchase more tokens to continue.",
+            detail="Insufficient scans available. Please wait for your daily reset or purchase more scans to continue.",
         )
 
     # Process the image
     image_bytes = await image.read()
+
+    # Analyze plate (this creates TokenUsage internally for tracking but doesn't deduct from scans_remaining)
     items = await analyze_plate(
         image_bytes, plate_size_cm=plate_size_cm, user_id=current_user.id, db=db
     )
+
     total_calories = sum(i.calories or 0 for i in items)
     key = f"uploads/{uuid.uuid4().hex}.jpg"
     photo_url = upload_image(key, image_bytes, image.content_type or "image/jpeg")
+
+    # Successfully processed and analyzed, now decrement the scan balance
+    current_user.scans_remaining -= 1
+    db.commit()
 
     return ScanResponse(
         items=items,
         total_calories=total_calories,
         photo_url=photo_url,
-        remaining_tokens=current_user.ai_tokens,
+        scans_remaining=current_user.scans_remaining,
     )
 
 

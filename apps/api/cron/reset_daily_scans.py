@@ -29,28 +29,35 @@ DATABASE_URL = os.getenv(
 
 
 def reset_all_users_daily_scans():
-    """Reset free_scan_used to False for all users."""
+    """Replenish scans to MAX_FREE_SCANS if current balance is lower."""
+    from app.config import settings
+
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
 
     try:
-        # Reset all users' free_scan_used to False
+        max_free = settings.max_free_scans
+
+        # Replenish scans ONLY if current scans_remaining < max_free
         result = session.execute(
-            text("UPDATE users SET free_scan_used = false WHERE free_scan_used = true")
+            text(
+                "UPDATE users SET scans_remaining = :max_free WHERE scans_remaining < :max_free"
+            ),
+            {"max_free": max_free},
         )
         session.commit()
 
         affected_rows = result.rowcount
         timestamp = datetime.utcnow().isoformat()
 
-        print(f"[{timestamp}] ✅ Daily scan reset completed.")
-        print(f"   Reset {affected_rows} users' free scan flags to False.")
+        print(f"[{timestamp}] ✅ Daily scan replenishment completed.")
+        print(f"   Replenished {affected_rows} users to {max_free} scans.")
 
         return affected_rows
     except Exception as e:
         session.rollback()
-        print(f"❌ Error resetting daily scans: {e}")
+        print(f"❌ Error replenishing daily scans: {e}")
         raise
     finally:
         session.close()

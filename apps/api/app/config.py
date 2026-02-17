@@ -37,5 +37,8 @@ class Settings(BaseModel):
         "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", ""
     )
 
+    # Free scan limits for non-paying users
+    max_free_scans: int = int(os.getenv("MAX_FREE_SCANS", "5"))  # Default: 5 free scans
+
 
 settings = Settings()

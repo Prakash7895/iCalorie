@@ -1,6 +1,6 @@
 /**
  * Google Play in-app purchase handler
- * Manages token purchase flow with react-native-iap
+ * Manages scan purchase flow with react-native-iap
  */
 
 import * as RNIap from 'react-native-iap';
