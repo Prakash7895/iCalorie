@@ -1,89 +1,30 @@
-import React, { useCallback, useRef, useState } from 'react';
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, StatusBar, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCameraPermissions } from 'expo-camera';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { COLORS } from '@/constants/colors';
-import { Button } from '@/components/ui/Button';
-
-const { width } = Dimensions.get('window');
+import { COLORS, SHADOWS } from '@/constants/colors';
 
 export default function CaptureScreen() {
   const router = useRouter();
-  const { autoCamera } = useLocalSearchParams<{ autoCamera?: string }>();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView | null>(null);
-  const [autoLaunched, setAutoLaunched] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Animation values
-  const focusScale = useSharedValue(1.2);
-  const focusOpacity = useSharedValue(0.5);
-
-  useFocusEffect(
-    useCallback(() => {
-      // Breathing animation for focus ring
-      focusScale.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1000 }),
-          withTiming(1.1, { duration: 1000 })
-        ),
-        -1,
-        true
-      );
-      focusOpacity.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1000 }),
-          withTiming(0.6, { duration: 1000 })
-        ),
-        -1,
-        true
-      );
-
-      if (autoCamera === '1' && !autoLaunched) {
-        setAutoLaunched(true);
-        // Small delay to ensure camera is ready
-        setTimeout(() => takePhoto(), 500);
-      }
-    }, [autoCamera, autoLaunched])
-  );
-
-  const focusStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: focusScale.value }],
-    opacity: focusOpacity.value,
-  }));
-
-  const pickImage = async () => {
-    try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const takePhoto = async () => {
+    if (!cameraPermission?.granted) {
+      const permission = await requestCameraPermission();
       if (!permission.granted) {
-        alert('Permission to access gallery is required.');
+        alert('Camera permission is required.');
         return;
       }
+    }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        selectionLimit: 1,
-        legacy: true, // Use older intent for emulator compatibility
+    try {
+      setLoading(true);
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.85,
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
@@ -93,101 +34,96 @@ export default function CaptureScreen() {
         });
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      // Check for specific Android crash
-      if (
-        error instanceof Error &&
-        error.message.includes('ActivityNotFoundException')
-      ) {
-        alert(
-          'Gallery app not found. Please install Google Photos or Files app.'
-        );
-      } else {
-        alert('Failed to open gallery.');
-      }
+      console.error('Camera error:', error);
+      alert('Failed to open camera.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const takePhoto = async () => {
-    if (!cameraRef.current) return;
-
-    if (!cameraPermission?.granted) {
-      const permission = await requestCameraPermission();
+  const pickImage = async () => {
+    try {
+      setLoading(true);
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        alert('Permission to access camera is required.');
+        alert('Gallery permission is required.');
         return;
       }
-    }
 
-    try {
-      setIsCapturing(true);
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.85,
+        selectionLimit: 1,
+        legacy: true,
       });
 
-      if (photo?.uri) {
+      if (!result.canceled && result.assets?.[0]?.uri) {
         router.push({
           pathname: '/results',
-          params: { imageUri: photo.uri },
+          params: { imageUri: result.assets[0].uri },
         });
       }
     } catch (error) {
-      console.error('Failed to take photo:', error);
-      alert('Failed to capture photo');
+      console.error('Gallery error:', error);
+      alert('Failed to open gallery.');
     } finally {
-      setIsCapturing(false);
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle='light-content' />
-      <CameraView ref={cameraRef} style={styles.camera} facing='back' />
 
-      {/* Overlays positioned absolutely over the camera */}
-      <View style={styles.overlayContainer}>
-        {/* Top Overlay */}
-        <BlurView intensity={20} tint='dark' style={styles.topBar}>
-          <View style={styles.pillContainer}>
-            <View style={styles.activePill}>
-              <Text style={styles.activePillText}>AI SCANNER</Text>
-            </View>
-          </View>
-        </BlurView>
-
-        {/* Focus Ring */}
-        <View style={styles.focusContainer}>
-          <Animated.View style={[styles.focusRing, focusStyle]} />
-          <View style={[styles.corner, styles.tl]} />
-          <View style={[styles.corner, styles.tr]} />
-          <View style={[styles.corner, styles.bl]} />
-          <View style={[styles.corner, styles.br]} />
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.badge}>
+          <Ionicons name='sparkles' size={14} color='#FFF' />
+          <Text style={styles.badgeText}>AI SCANNER</Text>
         </View>
-
-        <Text style={styles.hintText}>Center your meal</Text>
-
-        {/* Bottom Controls */}
-        <View style={styles.bottomControls}>
-          <Button
-            variant='icon'
-            icon='images-outline'
-            onPress={pickImage}
-            style={styles.galleryBtn}
-          />
-
-          <View style={styles.captureContainer}>
-            <Button
-              onPress={takePhoto}
-              style={styles.captureBtn}
-              loading={isCapturing}
-            >
-              <View style={styles.innerCapture} />
-            </Button>
-          </View>
-
-          <View style={styles.placeholderBtn} />
-        </View>
+        <Text style={styles.title}>Scan Your Meal</Text>
+        <Text style={styles.subtitle}>
+          Take a photo or pick from gallery to analyze nutrition
+        </Text>
       </View>
+
+      {/* Illustration */}
+      <View style={styles.illustration}>
+        <View style={styles.iconCircle}>
+          <Ionicons name='camera' size={64} color={COLORS.accent} />
+        </View>
+        <View style={styles.cornerTL} />
+        <View style={styles.cornerTR} />
+        <View style={styles.cornerBL} />
+        <View style={styles.cornerBR} />
+      </View>
+
+      {/* Buttons */}
+      <View style={styles.actions}>
+        <Pressable
+          style={[styles.primaryBtn, loading && styles.disabledBtn]}
+          onPress={takePhoto}
+          disabled={loading}
+        >
+          <Ionicons name='camera' size={22} color='#FFF' />
+          <Text style={styles.primaryBtnText}>Take Photo</Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.secondaryBtn, loading && styles.disabledBtn]}
+          onPress={pickImage}
+          disabled={loading}
+        >
+          <Ionicons name='images-outline' size={22} color={COLORS.accent} />
+          <Text style={styles.secondaryBtnText}>Choose from Gallery</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.hint}>
+        You can crop and adjust the image before analysis
+      </Text>
     </View>
   );
 }
@@ -195,145 +131,144 @@ export default function CaptureScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
-  },
-  overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: COLORS.bg,
-    gap: 20,
-    padding: 20,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
   },
-  permissionText: {
-    fontSize: 16,
-    color: COLORS.secondary,
-    textAlign: 'center',
-  },
-  camera: {
-    flex: 1,
-  },
-  topBar: {
-    paddingTop: 60,
-    paddingBottom: 20,
+  header: {
     alignItems: 'center',
+    marginBottom: 48,
   },
-  pillContainer: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    padding: 4,
-  },
-  activePill: {
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: COLORS.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 16,
   },
-  activePillText: {
-    color: 'white',
+  badgeText: {
+    color: '#FFF',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
   },
-  focusContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  illustration: {
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 48,
     position: 'relative',
   },
-  focusRing: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: width * 0.35,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderStyle: 'dashed',
+  iconCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: `${COLORS.accent}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: `${COLORS.accent}30`,
   },
-  corner: {
+  cornerTL: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderColor: 'white',
-    borderWidth: 4,
-  },
-  tl: {
-    top: '25%',
+    top: 0,
     left: '15%',
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    borderTopLeftRadius: 16,
+    width: 28,
+    height: 28,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderColor: COLORS.accent,
+    borderTopLeftRadius: 8,
   },
-  tr: {
-    top: '25%',
+  cornerTR: {
+    position: 'absolute',
+    top: 0,
     right: '15%',
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-    borderTopRightRadius: 16,
+    width: 28,
+    height: 28,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderColor: COLORS.accent,
+    borderTopRightRadius: 8,
   },
-  bl: {
-    bottom: '25%',
+  cornerBL: {
+    position: 'absolute',
+    bottom: 0,
     left: '15%',
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 16,
+    width: 28,
+    height: 28,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderColor: COLORS.accent,
+    borderBottomLeftRadius: 8,
   },
-  br: {
-    bottom: '25%',
+  cornerBR: {
+    position: 'absolute',
+    bottom: 0,
     right: '15%',
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-    borderBottomRightRadius: 16,
+    width: 28,
+    height: 28,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderColor: COLORS.accent,
+    borderBottomRightRadius: 8,
   },
-  hintText: {
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 40,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+  actions: {
+    gap: 14,
+    marginBottom: 20,
   },
-  bottomControls: {
+  primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 40,
-    paddingBottom: 60,
-  },
-  galleryBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  captureContainer: {
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 50,
-    padding: 4,
-  },
-  captureBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'white',
-    padding: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  innerCapture: {
-    width: 64,
-    height: 64,
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.accent,
+    paddingVertical: 18,
     borderRadius: 32,
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: '#CCC',
+    ...SHADOWS.medium,
   },
-  placeholderBtn: {
-    width: 50,
+  primaryBtnText: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: `${COLORS.accent}15`,
+    paddingVertical: 18,
+    borderRadius: 32,
+    borderWidth: 1.5,
+    borderColor: `${COLORS.accent}40`,
+  },
+  secondaryBtnText: {
+    color: COLORS.accent,
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  disabledBtn: {
+    opacity: 0.5,
+  },
+  hint: {
+    color: COLORS.secondary,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

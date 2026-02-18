@@ -72,6 +72,12 @@ export default function ResultsScreen() {
 
   const runScan = useCallback(async () => {
     if (!hasImage) return;
+    // Clear previous scan results immediately so stale data isn't shown
+    setItems([]);
+    setTotal(null);
+    setLogId(null);
+    setMacros({ protein: 0, carbs: 0, fat: 0 });
+    setPhotoUrl(null);
     setLoading(true);
     setErrorText(null);
 
@@ -394,8 +400,8 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   imageContainer: {
-    height: 300,
     width: '100%',
+    aspectRatio: 4 / 3,
     position: 'relative',
     backgroundColor: '#000',
     borderBottomLeftRadius: 32,
@@ -413,7 +419,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'contain',
     opacity: 0.9,
   },
   scanOverlay: {

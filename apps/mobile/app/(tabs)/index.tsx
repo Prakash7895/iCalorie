@@ -383,7 +383,7 @@ export default function HomeScreen() {
           <Button
             title='Scan Meal'
             icon='camera'
-            onPress={() => router.push('/capture?autoCamera=1')}
+            onPress={() => router.push('/capture')}
             style={styles.actionBtn}
           />
           <Button
