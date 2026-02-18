@@ -44,7 +44,7 @@ async def scan_plate(
     log = MealLog(
         user_id=current_user.id,
         created_at=datetime.utcnow(),
-        total_calories=total_calories,
+        total_calories=round(total_calories, -1),
         photo_url=photo_url,
         items=[item.model_dump() for item in items],
         plate_size_cm=plate_size_cm,

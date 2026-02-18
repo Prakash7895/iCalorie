@@ -92,12 +92,15 @@ class PricingInfo(BaseModel):
 # Food & Nutrition Schemas
 class FoodItem(BaseModel):
     name: str
-    grams: Optional[float] = None
+    normalized_name: Optional[str] = None
+    portion: Optional[str] = None
+    estimated_grams: Optional[float] = None
     calories: Optional[float] = None
+    confidence: Optional[float] = None
+    notes: Optional[str] = None
     protein_g: Optional[float] = None
     carbs_g: Optional[float] = None
     fat_g: Optional[float] = None
-    confidence: Optional[float] = None
 
 
 class ScanResponse(BaseModel):

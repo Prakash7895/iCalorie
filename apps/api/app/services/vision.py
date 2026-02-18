@@ -30,40 +30,52 @@ async def analyze_plate(
 
     # Exact prompt requested by user
     prompt = """
-You are a food analysis AI.
+            You are a food analysis AI.
 
-Analyze the provided food image and do the following:
+            Analyze the provided food image and follow ALL rules strictly:
 
-1. Identify each distinct food item visible on the plate or bowl.
-2. For each item:
-   - Provide a clear, generic food name (avoid brand names).
-   - Estimate portion size using common household units:
-     (cup, bowl, pieces, tbsp, tsp).
-   - Infer cooking style if visible (fried, curry, baked, steamed).
-3. If the dish is mixed (e.g. biryani, dal-chawal), identify it as a single composite dish.
-4. Do NOT guess calories.
-5. Do NOT list ingredients unless clearly visible.
-6. If uncertain, say so explicitly.
+            1. Identify each distinct food item visible.
+            2. For each item:
+            - Provide a clear generic food name (lowercase).
+            - Estimate portion using STRICT numeric format only:
+                    "<number> cup"
+                    "<number> bowl"
+                    "<number> piece"
+                    "<number> tbsp"
+                    "<number> tsp"
+            - Do NOT use words like small, medium, large.
+            - Do NOT use ranges.
+            - Do NOT use fractions like 1/2. Use decimals (0.5).
+            3. Cooking style must be ONE of:
+            "fried", "steamed", "baked", "curry", null
+            4. If mixed dish (biryani, dal-chawal), treat as ONE dish.
+            5. Do NOT guess calories.
+            6. If unsure, lower confidence but still choose best estimate.
+            7. Assume the food is served on a standard 10-inch dinner plate unless a bowl is clearly visible.
+            8. Do NOT adjust portion size based solely on camera distance.
 
-Respond ONLY in valid JSON.
+            Return ONLY valid JSON.
 
-JSON schema:
-{
-  "foods": [
-    {
-      "name": string,
-      "portion": string,
-      "cooking_style": string | null,
-      "confidence": number (0-1),
-      "notes": string | null
-    }
-  ],
-  "meal_notes": string | null
-}
+            Schema:
+            {
+            "foods": [
+                {
+                "name": string,
+                "portion": string,
+                "cooking_style": "fried" | "steamed" | "baked" | "curry" | null,
+                "confidence": number (0-1),
+                "notes": string | null
+                }
+            ],
+            "meal_notes": string | null
+            }
     """
 
     model = ChatOpenAI(
-        model=settings.ai_model, api_key=settings.openai_api_key, max_tokens=5000
+        model=settings.ai_model,
+        api_key=settings.openai_api_key,
+        max_tokens=1500,
+        temperature=0,
     )
     message = HumanMessage(
         content=[
@@ -151,12 +163,17 @@ JSON schema:
         # 1. Normalize Name
         normalized_name = normalize_food_name(raw_name)
 
-        # 2. Get Grams
-        grams = get_portion_grams(portion_str)
-
-        # 3. Get USDA Nutrition (kcal, protein, carbs, fat per 100g)
+        # 2. Get USDA Nutrition (kcal, protein, carbs, fat per 100g)
         nutrition = await get_usda_nutrition(normalized_name)
         kcal_per_100g = nutrition["kcal"]
+
+        # 3. Get Grams
+        # grams = get_portion_grams(portion_str)
+        grams = get_portion_grams(
+            normalized_name,
+            item["portion"],
+            nutrition.get("serving_grams"),
+        )
 
         # 4. Calculate Total Calories and Macros
         total_kcal = calculate_calories(grams, kcal_per_100g, cooking_style)
@@ -176,7 +193,6 @@ JSON schema:
                 calories=total_kcal,
                 confidence=item.get("confidence"),
                 notes=notes,
-                # MVP: Estimate macros roughly if needed, or leave None
                 protein_g=protein,
                 carbs_g=carbs,
                 fat_g=fat,

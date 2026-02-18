@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     position: 'absolute',
-    bottom: 90, // Tab bar is 60px height + 15px bottom + 15px spacing = 90px
+    bottom: 10,
     left: 20,
     right: 20,
     borderRadius: 28,

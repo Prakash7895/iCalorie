@@ -392,22 +392,25 @@ export default function CropScreen() {
           </Animated.View>
         </View>
 
-        <Text style={styles.hint}>Drag corners or box to adjust crop</Text>
+        {/* Bottom bar — always rendered above the image area */}
+        <View style={styles.bottomBar}>
+          <Text style={styles.hint}>Drag corners or box to adjust crop</Text>
 
-        <Pressable
-          style={[styles.confirmBtn, processing && styles.disabledBtn]}
-          onPress={handleCrop}
-          disabled={processing}
-        >
-          {processing ? (
-            <ActivityIndicator color='#FFF' />
-          ) : (
-            <>
-              <Ionicons name='checkmark-circle' size={22} color='#FFF' />
-              <Text style={styles.confirmText}>Crop & Analyze</Text>
-            </>
-          )}
-        </Pressable>
+          <Pressable
+            style={[styles.confirmBtn, processing && styles.disabledBtn]}
+            onPress={handleCrop}
+            disabled={processing}
+          >
+            {processing ? (
+              <ActivityIndicator color='#FFF' />
+            ) : (
+              <>
+                <Ionicons name='checkmark-circle' size={22} color='#FFF' />
+                <Text style={styles.confirmText}>Crop & Analyze</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
       </View>
     </GestureHandlerRootView>
   );
@@ -432,8 +435,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   skipText: { color: COLORS.accent, fontSize: 16, fontWeight: '600' },
-  imageArea: { flex: 1, position: 'relative', overflow: 'hidden' },
+  imageArea: { flex: 1, position: 'relative', overflow: 'hidden', zIndex: 0 },
   image: { flex: 1, width: '100%' },
+  bottomBar: {
+    backgroundColor: '#000',
+    paddingBottom: 40,
+    zIndex: 10,
+  },
   cropBox: { position: 'absolute', overflow: 'visible' },
   cropBorder: {
     ...StyleSheet.absoluteFillObject,
@@ -498,7 +506,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
     fontSize: 13,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   confirmBtn: {
     flexDirection: 'row',
