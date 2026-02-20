@@ -4,9 +4,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function SplashScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
@@ -67,10 +70,10 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },

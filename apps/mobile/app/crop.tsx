@@ -20,7 +20,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const SCREEN = Dimensions.get('window');
 const MIN_SIZE = 60;
@@ -32,6 +33,9 @@ function clamp(val: number, min: number, max: number) {
 }
 
 export default function CropScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
   const [processing, setProcessing] = useState(false);
@@ -416,7 +420,7 @@ export default function CropScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1 },
   container: { flex: 1, backgroundColor: '#000' },
   header: {
@@ -434,7 +438,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  skipText: { color: COLORS.accent, fontSize: 16, fontWeight: '600' },
+  skipText: { color: colors.accent, fontSize: 16, fontWeight: '600' },
   imageArea: { flex: 1, position: 'relative', overflow: 'hidden', zIndex: 0 },
   image: { flex: 1, width: '100%' },
   bottomBar: {
@@ -513,7 +517,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     marginHorizontal: 24,
     marginBottom: 40,
     paddingVertical: 16,

@@ -3,15 +3,17 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { HapticTab } from '@/components/haptic-tab';
 
 export default function TabLayout() {
+  const colors = useThemeColor();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.secondary,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.secondary,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
@@ -19,7 +21,7 @@ export default function TabLayout() {
           borderTopStartRadius: 30,
           borderTopWidth: 2,
           backgroundColor:
-            Platform.OS === 'android' ? COLORS.surface : 'transparent',
+            Platform.OS === 'android' ? colors.surface : 'transparent',
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 10 },

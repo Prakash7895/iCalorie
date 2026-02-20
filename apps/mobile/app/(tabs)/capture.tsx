@@ -4,9 +4,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function CaptureScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
@@ -92,7 +96,7 @@ export default function CaptureScreen() {
       {/* Illustration */}
       <View style={styles.illustration}>
         <View style={styles.iconCircle}>
-          <Ionicons name='camera' size={64} color={COLORS.accent} />
+          <Ionicons name='camera' size={64} color={colors.accent} />
         </View>
         <View style={styles.cornerTL} />
         <View style={styles.cornerTR} />
@@ -116,7 +120,7 @@ export default function CaptureScreen() {
           onPress={pickImage}
           disabled={loading}
         >
-          <Ionicons name='images-outline' size={22} color={COLORS.accent} />
+          <Ionicons name='images-outline' size={22} color={colors.accent} />
           <Text style={styles.secondaryBtnText}>Choose from Gallery</Text>
         </Pressable>
       </View>
@@ -128,10 +132,10 @@ export default function CaptureScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
     paddingHorizontal: 24,
     justifyContent: 'center',
   },
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
@@ -158,13 +162,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: colors.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: COLORS.secondary,
+    color: colors.secondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -178,11 +182,11 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: `${COLORS.accent}15`,
+    backgroundColor: `${colors.accent}15`,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: `${COLORS.accent}30`,
+    borderColor: `${colors.accent}30`,
   },
   cornerTL: {
     position: 'absolute',
@@ -192,7 +196,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
     borderTopLeftRadius: 8,
   },
   cornerTR: {
@@ -203,7 +207,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderTopWidth: 3,
     borderRightWidth: 3,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
     borderTopRightRadius: 8,
   },
   cornerBL: {
@@ -214,7 +218,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderBottomWidth: 3,
     borderLeftWidth: 3,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
     borderBottomLeftRadius: 8,
   },
   cornerBR: {
@@ -225,7 +229,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
     borderBottomRightRadius: 8,
   },
   actions: {
@@ -237,7 +241,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     paddingVertical: 18,
     borderRadius: 32,
     ...SHADOWS.medium,
@@ -252,14 +256,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: `${COLORS.accent}15`,
+    backgroundColor: `${colors.accent}15`,
     paddingVertical: 18,
     borderRadius: 32,
     borderWidth: 1.5,
-    borderColor: `${COLORS.accent}40`,
+    borderColor: `${colors.accent}40`,
   },
   secondaryBtnText: {
-    color: COLORS.accent,
+    color: colors.accent,
     fontSize: 17,
     fontWeight: '600',
   },
@@ -267,7 +271,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   hint: {
-    color: COLORS.secondary,
+    color: colors.secondary,
     fontSize: 13,
     textAlign: 'center',
   },

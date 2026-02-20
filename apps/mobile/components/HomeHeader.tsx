@@ -7,7 +7,8 @@ import Animated, {
   useAnimatedStyle,
   SharedValue,
 } from 'react-native-reanimated';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface HomeHeaderProps {
   user: any;
@@ -20,6 +21,9 @@ const HEADER_MIN_HEIGHT = 95;
 
 const HomeHeader = memo(
   ({ user, scrollY, onProfilePress, onScanStatusPress }: HomeHeaderProps) => {
+    const colors = useThemeColor();
+    const styles = createStyles(colors);
+
     const hasBanner =
       user?.scans_remaining !== undefined && user.scans_remaining < 10;
     const HEADER_MAX_HEIGHT = hasBanner ? 190 : 130;
@@ -136,7 +140,7 @@ const HomeHeader = memo(
                     style={styles.avatarImage}
                   />
                 ) : (
-                  <Ionicons name='person' size={24} color={COLORS.white} />
+                  <Ionicons name='person' size={24} color={colors.white} />
                 )}
               </View>
             </Pressable>
@@ -149,7 +153,7 @@ const HomeHeader = memo(
                 onPress={onScanStatusPress}
               >
                 <View style={styles.scanBadge}>
-                  <Ionicons name='flash' size={12} color={COLORS.accent} />
+                  <Ionicons name='flash' size={12} color={colors.accent} />
                   <Text style={styles.scanBadgeText}>
                     {user.scans_remaining}
                   </Text>
@@ -166,85 +170,86 @@ const HomeHeader = memo(
   }
 );
 
-const styles = StyleSheet.create({
-  fixedHeader: {
-    backgroundColor: COLORS.accent,
-    paddingTop: 35,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    ...SHADOWS.medium,
-  },
-  headerContent: {
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    flex: 1,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  greetingTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  greeting: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  fixedAvatarContainer: {
-    marginLeft: 16,
-  },
-  fixedAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 22,
-  },
-  scanStatusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
-    borderRadius: 12,
-    gap: 12,
-    marginTop: 16,
-  },
-  scanBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  scanBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.accent,
-  },
-  scanStatusText: {
-    flex: 1,
-    fontSize: 12,
-    color: COLORS.white,
-    fontWeight: '500',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    fixedHeader: {
+      backgroundColor: colors.accent,
+      paddingTop: 35,
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      ...SHADOWS.medium,
+    },
+    headerContent: {
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+      flex: 1,
+    },
+    topRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    greetingTextContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    greeting: {
+      fontSize: 16,
+      color: 'rgba(255, 255, 255, 0.9)',
+      fontWeight: '500',
+    },
+    subtitle: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.8)',
+    },
+    fixedAvatarContainer: {
+      marginLeft: 16,
+    },
+    fixedAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.4)',
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 22,
+    },
+    scanStatusBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      padding: 12,
+      borderRadius: 12,
+      gap: 12,
+      marginTop: 16,
+    },
+    scanBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.white,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      gap: 4,
+    },
+    scanBadgeText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    scanStatusText: {
+      flex: 1,
+      fontSize: 12,
+      color: colors.white,
+      fontWeight: '500',
+    },
+  });
 
 export default HomeHeader;

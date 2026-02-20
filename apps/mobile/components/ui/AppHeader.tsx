@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 type AppHeaderProps = {
   title?: string;
@@ -17,6 +17,9 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ title, showBack }: AppHeaderProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const segments = useSegments();
 
@@ -29,7 +32,7 @@ export function AppHeader({ title, showBack }: AppHeaderProps) {
       <View style={styles.content}>
         {shouldShowBack && (
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name='arrow-back' size={24} color={COLORS.primary} />
+            <Ionicons name='arrow-back' size={24} color={colors.primary} />
           </Pressable>
         )}
         {title && (
@@ -42,33 +45,39 @@ export function AppHeader({ title, showBack }: AppHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    paddingTop: Platform.OS === 'ios' ? StatusBar.currentHeight || 44 : 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    minHeight: 56,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  titleWithBack: {
-    flex: 1,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      paddingTop: Platform.OS === 'ios' ? StatusBar.currentHeight || 44 : 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      minHeight: 56,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    titleWithBack: {
+      flex: 1,
+    },
+  });

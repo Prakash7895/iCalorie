@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface NotificationsModalProps {
   visible: boolean;
@@ -42,6 +43,9 @@ export default function NotificationsModal({
   visible,
   onClose,
 }: NotificationsModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const [settings, setSettings] = useState<NotifSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
@@ -103,7 +107,7 @@ export default function NotificationsModal({
 
   const Row = ({
     icon,
-    iconColor = COLORS.accent,
+    iconColor = colors.accent,
     label,
     sublabel,
     value,
@@ -121,9 +125,9 @@ export default function NotificationsModal({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: COLORS.border, true: COLORS.accent }}
-        thumbColor={COLORS.white}
-        ios_backgroundColor={COLORS.border}
+        trackColor={{ false: colors.border, true: colors.accent }}
+        thumbColor={colors.white}
+        ios_backgroundColor={colors.border}
       />
     </View>
   );
@@ -147,7 +151,7 @@ export default function NotificationsModal({
                 <Ionicons
                   name='notifications'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                 />
               </View>
               <View>
@@ -156,7 +160,7 @@ export default function NotificationsModal({
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name='close' size={20} color={COLORS.secondary} />
+              <Ionicons name='close' size={20} color={colors.secondary} />
             </Pressable>
           </View>
 
@@ -236,133 +240,142 @@ export default function NotificationsModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  sheet: {
-    backgroundColor: COLORS.bg,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    maxHeight: '85%',
-    ...SHADOWS.large,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: `${COLORS.accent}18`,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: COLORS.secondary,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.small,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    letterSpacing: 0.8,
-    marginTop: 16,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    overflow: 'hidden',
-    ...SHADOWS.small,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  rowIndent: {
-    paddingLeft: 24,
-  },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  rowContent: {
-    flex: 1,
-  },
-  rowLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  rowSublabel: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    marginTop: 2,
-    fontWeight: '400',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.bg,
-    marginLeft: 64,
-  },
-  note: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    marginHorizontal: 4,
-    lineHeight: 18,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    sheet: {
+      backgroundColor: colors.bg,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+      maxHeight: '85%',
+      ...SHADOWS.large,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: 'rgba(0,0,0,0.12)',
+      alignSelf: 'center',
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: `${colors.accent}18`,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: colors.secondary,
+      fontWeight: '500',
+      marginTop: 1,
+    },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    scroll: {
+      paddingHorizontal: 20,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.secondary,
+      letterSpacing: 0.8,
+      marginTop: 16,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      overflow: 'hidden',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 12,
+    },
+    rowIndent: {
+      paddingLeft: 24,
+    },
+    rowIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    rowContent: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    rowSublabel: {
+      fontSize: 12,
+      color: colors.secondary,
+      marginTop: 2,
+      fontWeight: '400',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.bg,
+      marginLeft: 64,
+    },
+    note: {
+      fontSize: 12,
+      color: colors.secondary,
+      textAlign: 'center',
+      marginTop: 20,
+      marginBottom: 8,
+      marginHorizontal: 4,
+      lineHeight: 18,
+    },
+  });

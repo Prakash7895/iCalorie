@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { storage } from '@/lib/storage';
 
 export default function ReadyScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
 
   const handleGetStarted = async () => {
@@ -28,7 +31,7 @@ export default function ReadyScreen() {
           style={styles.iconContainer}
         >
           <View style={styles.iconCircle}>
-            <Ionicons name='checkmark-circle' size={80} color={COLORS.accent} />
+            <Ionicons name='checkmark-circle' size={80} color={colors.accent} />
           </View>
         </Animated.View>
 
@@ -65,10 +68,10 @@ export default function ReadyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   content: {
     flex: 1,
@@ -90,13 +93,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    color: COLORS.secondary,
+    color: colors.secondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -114,14 +117,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   dotActive: {
     width: 24,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
   },
   primaryBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryBtnText: {
-    color: COLORS.secondary,
+    color: colors.secondary,
     fontSize: 16,
     fontWeight: '600',
   },

@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -26,6 +26,9 @@ export function ProgressRing({
   target = 2000,
   current = 0,
 }: ProgressRingProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = useSharedValue(circumference);
@@ -54,7 +57,7 @@ export function ProgressRing({
             cx={radius}
             cy={radius}
             r={normalizedRadius}
-            stroke={COLORS.bg}
+            stroke={colors.bg}
             strokeWidth={stroke}
             fill='transparent'
           />
@@ -63,7 +66,7 @@ export function ProgressRing({
             cx={radius}
             cy={radius}
             r={normalizedRadius}
-            stroke={COLORS.accent}
+            stroke={colors.accent}
             strokeWidth={stroke}
             strokeLinecap='round'
             fill='transparent'
@@ -80,7 +83,7 @@ export function ProgressRing({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -94,11 +97,11 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 32,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: colors.primary,
   },
   label: {
     fontSize: 14,
-    color: COLORS.secondary,
+    color: colors.secondary,
     marginTop: 4,
   },
 });

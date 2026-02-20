@@ -13,7 +13,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ButtonProps {
@@ -41,6 +42,9 @@ export function Button({
   textStyle,
   children,
 }: ButtonProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
@@ -59,30 +63,30 @@ export function Button({
   const getBackgroundColor = () => {
     switch (variant) {
       case 'primary':
-        return COLORS.accent;
+        return colors.accent;
       case 'secondary':
-        return COLORS.accentSoft;
+        return colors.accentSoft;
       case 'ghost':
         return 'transparent';
       case 'icon':
-        return COLORS.surface;
+        return colors.surface;
       default:
-        return COLORS.accent;
+        return colors.accent;
     }
   };
 
   const getTextColor = () => {
     switch (variant) {
       case 'primary':
-        return COLORS.white;
+        return colors.white;
       case 'secondary':
-        return COLORS.accent;
+        return colors.accent;
       case 'ghost':
-        return COLORS.secondary;
+        return colors.secondary;
       case 'icon':
-        return COLORS.primary;
+        return colors.primary;
       default:
-        return COLORS.white;
+        return colors.white;
     }
   };
 
@@ -126,7 +130,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

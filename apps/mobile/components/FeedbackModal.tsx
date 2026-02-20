@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { submitFeedback } from '@/lib/api';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -25,6 +26,9 @@ export default function FeedbackModal({
   visible,
   onClose,
 }: FeedbackModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -88,7 +92,7 @@ export default function FeedbackModal({
                 <Ionicons
                   name='chatbubble-ellipses'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                 />
               </View>
               <View>
@@ -97,7 +101,7 @@ export default function FeedbackModal({
               </View>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close' size={22} color={COLORS.secondary} />
+              <Ionicons name='close' size={22} color={colors.secondary} />
             </TouchableOpacity>
           </View>
 
@@ -127,10 +131,10 @@ export default function FeedbackModal({
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={COLORS.white} />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <>
-                <Ionicons name='send' size={18} color={COLORS.white} />
+                <Ionicons name='send' size={18} color={colors.white} />
                 <Text style={styles.submitButtonText}>Send Feedback</Text>
               </>
             )}
@@ -141,106 +145,115 @@ export default function FeedbackModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    ...SHADOWS.large,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: `${COLORS.accent}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
-    lineHeight: 22,
-  },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.secondary,
-    marginTop: 1,
-  },
-  closeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textarea: {
-    backgroundColor: COLORS.bg,
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.primary,
-    fontWeight: '500',
-    minHeight: 140,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-  },
-  charCount: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    textAlign: 'right',
-    marginTop: 6,
-    marginBottom: 16,
-    fontWeight: '500',
-  },
-  submitButton: {
-    backgroundColor: COLORS.accent,
-    height: 54,
-    borderRadius: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    ...SHADOWS.medium,
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  submitButtonText: {
-    color: COLORS.white,
-    fontSize: 17,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      padding: 24,
+      paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: -6 },
+      shadowOpacity: 0.1,
+      shadowRadius: 16,
+      elevation: 10,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    iconBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: `${colors.accent}15`,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.primary,
+      lineHeight: 22,
+    },
+    subtitle: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: colors.secondary,
+      marginTop: 1,
+    },
+    closeButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    textarea: {
+      backgroundColor: colors.bg,
+      borderRadius: 18,
+      padding: 16,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.primary,
+      fontWeight: '500',
+      minHeight: 140,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.06)',
+    },
+    charCount: {
+      fontSize: 12,
+      color: colors.secondary,
+      textAlign: 'right',
+      marginTop: 6,
+      marginBottom: 16,
+      fontWeight: '500',
+    },
+    submitButton: {
+      backgroundColor: colors.accent,
+      height: 54,
+      borderRadius: 16,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    disabledButton: {
+      opacity: 0.7,
+    },
+    submitButtonText: {
+      color: colors.white,
+      fontSize: 17,
+      fontWeight: '700',
+    },
+  });

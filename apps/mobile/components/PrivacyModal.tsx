@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
@@ -24,6 +25,9 @@ interface PrivacyModalProps {
 }
 
 export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -141,9 +145,9 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
         <Text style={styles.actionSublabel}>{sublabel}</Text>
       </View>
       {loading ? (
-        <ActivityIndicator size='small' color={COLORS.secondary} />
+        <ActivityIndicator size='small' color={colors.secondary} />
       ) : (
-        <Ionicons name='chevron-forward' size={18} color={COLORS.secondary} />
+        <Ionicons name='chevron-forward' size={18} color={colors.secondary} />
       )}
     </Pressable>
   );
@@ -167,7 +171,7 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
                 <Ionicons
                   name='shield-checkmark'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                 />
               </View>
               <View>
@@ -176,7 +180,7 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name='close' size={20} color={COLORS.secondary} />
+              <Ionicons name='close' size={20} color={colors.secondary} />
             </Pressable>
           </View>
 
@@ -188,7 +192,7 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
             <Text style={styles.sectionLabel}>YOUR DATA</Text>
             <View style={styles.card}>
               <View style={styles.infoRow}>
-                <Ionicons name='lock-closed' size={16} color={COLORS.accent} />
+                <Ionicons name='lock-closed' size={16} color={colors.accent} />
                 <Text style={styles.infoText}>
                   iCalorie stores your data securely and never sells it to third
                   parties.
@@ -201,8 +205,8 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
             <View style={styles.card}>
               <ActionRow
                 icon='document-text-outline'
-                iconBg={`${COLORS.accent}18`}
-                iconColor={COLORS.accent}
+                iconBg={`${colors.accent}18`}
+                iconColor={colors.accent}
                 label='Privacy Policy'
                 sublabel='Read how we handle your data'
                 onPress={() =>
@@ -234,7 +238,7 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
               <ActionRow
                 icon='trash-outline'
                 iconBg='#FF767518'
-                iconColor={COLORS.error}
+                iconColor={colors.error}
                 label='Delete Meal History'
                 sublabel='Remove all logged meals permanently'
                 onPress={handleDeleteMealHistory}
@@ -245,7 +249,7 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
               <ActionRow
                 icon='warning-outline'
                 iconBg='#FF767518'
-                iconColor={COLORS.error}
+                iconColor={colors.error}
                 label='Delete Account'
                 sublabel='Permanently remove your account and data'
                 onPress={handleDeleteAccount}
@@ -264,144 +268,153 @@ export default function PrivacyModal({ visible, onClose }: PrivacyModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  sheet: {
-    backgroundColor: COLORS.bg,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    maxHeight: '85%',
-    ...SHADOWS.large,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: `${COLORS.accent}18`,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: COLORS.secondary,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.small,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    letterSpacing: 0.8,
-    marginTop: 16,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    overflow: 'hidden',
-    ...SHADOWS.small,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    padding: 16,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.secondary,
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionContent: {
-    flex: 1,
-  },
-  actionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  destructiveText: {
-    color: COLORS.error,
-  },
-  actionSublabel: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.bg,
-    marginLeft: 64,
-  },
-  note: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    marginHorizontal: 4,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    sheet: {
+      backgroundColor: colors.bg,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+      maxHeight: '85%',
+      ...SHADOWS.large,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: 'rgba(0,0,0,0.12)',
+      alignSelf: 'center',
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: `${colors.accent}18`,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: colors.secondary,
+      fontWeight: '500',
+      marginTop: 1,
+    },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    scroll: {
+      paddingHorizontal: 20,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.secondary,
+      letterSpacing: 0.8,
+      marginTop: 16,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      overflow: 'hidden',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      padding: 16,
+    },
+    infoText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.secondary,
+      lineHeight: 20,
+      fontWeight: '400',
+    },
+    actionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 12,
+    },
+    actionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    actionContent: {
+      flex: 1,
+    },
+    actionLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    destructiveText: {
+      color: colors.error,
+    },
+    actionSublabel: {
+      fontSize: 12,
+      color: colors.secondary,
+      marginTop: 2,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.bg,
+      marginLeft: 64,
+    },
+    note: {
+      fontSize: 12,
+      color: colors.secondary,
+      textAlign: 'center',
+      marginTop: 20,
+      marginBottom: 8,
+      marginHorizontal: 4,
+    },
+  });

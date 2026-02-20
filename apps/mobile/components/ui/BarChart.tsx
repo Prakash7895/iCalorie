@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_WIDTH = SCREEN_WIDTH - 80;
@@ -27,6 +27,9 @@ export function BarChart({
   containerStyle,
   today: currentDay,
 }: BarChartProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const maxCalories = Math.max(...data.map((d) => d.total_calories), target, 1);
 
   return (
@@ -71,6 +74,8 @@ function Bar({
   delay: number;
   isToday?: boolean;
 }) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
   const height = useSharedValue(0);
   const targetHeight = (value / maxValue) * MAX_BAR_HEIGHT;
 
@@ -96,7 +101,7 @@ function Bar({
           style={[
             styles.barFill,
             animatedStyle,
-            isOverTarget && { backgroundColor: COLORS.error },
+            isOverTarget && { backgroundColor: colors.error },
             isToday && { opacity: 1 },
             !isToday && value === 0 && { opacity: 0.3 },
           ]}
@@ -109,61 +114,62 @@ function Bar({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderRadius: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 12,
-  },
-  chartArea: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: MAX_BAR_HEIGHT + 16,
-  },
-  barWrapper: {
-    alignItems: 'center',
-    width: BAR_WIDTH,
-  },
-  barBackground: {
-    width: BAR_WIDTH,
-    height: MAX_BAR_HEIGHT,
-    backgroundColor: COLORS.bg,
-    borderRadius: BAR_WIDTH / 2,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    backgroundColor: COLORS.accent,
-    borderRadius: BAR_WIDTH / 2,
-  },
-  barLabel: {
-    marginTop: 8,
-    fontSize: 10,
-    color: COLORS.secondary,
-    fontWeight: '600',
-  },
-  todayBarBackground: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(52, 199, 89, 0.4)',
-    backgroundColor: 'rgba(52, 199, 89, 0.05)',
-  },
-  todayLabel: {
-    color: COLORS.accent,
-    fontWeight: '800',
-    fontSize: 11,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      padding: 20,
+      borderRadius: 24,
+      width: '100%',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 12,
+    },
+    chartArea: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      height: MAX_BAR_HEIGHT + 16,
+    },
+    barWrapper: {
+      alignItems: 'center',
+      width: BAR_WIDTH,
+    },
+    barBackground: {
+      width: BAR_WIDTH,
+      height: MAX_BAR_HEIGHT,
+      backgroundColor: colors.bg,
+      borderRadius: BAR_WIDTH / 2,
+      justifyContent: 'flex-end',
+      overflow: 'hidden',
+    },
+    barFill: {
+      width: '100%',
+      backgroundColor: colors.accent,
+      borderRadius: BAR_WIDTH / 2,
+    },
+    barLabel: {
+      marginTop: 8,
+      fontSize: 10,
+      color: colors.secondary,
+      fontWeight: '600',
+    },
+    todayBarBackground: {
+      borderWidth: 1.5,
+      borderColor: 'rgba(52, 199, 89, 0.4)',
+      backgroundColor: 'rgba(52, 199, 89, 0.05)',
+    },
+    todayLabel: {
+      color: colors.accent,
+      fontWeight: '800',
+      fontSize: 11,
+    },
+  });

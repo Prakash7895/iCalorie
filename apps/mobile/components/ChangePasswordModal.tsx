@@ -9,7 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { authenticatedFetch } from '@/lib/authFetch';
 
 type ChangePasswordModalProps = {
@@ -23,6 +24,9 @@ export function ChangePasswordModal({
   onClose,
   onSuccess,
 }: ChangePasswordModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -86,7 +90,7 @@ export function ChangePasswordModal({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Change Password</Text>
             <Pressable onPress={onClose}>
-              <Ionicons name='close' size={24} color={COLORS.secondary} />
+              <Ionicons name='close' size={24} color={colors.secondary} />
             </Pressable>
           </View>
 
@@ -99,7 +103,7 @@ export function ChangePasswordModal({
                 onChangeText={setCurrentPassword}
                 secureTextEntry
                 placeholder='Enter current password'
-                placeholderTextColor={COLORS.secondary}
+                placeholderTextColor={colors.secondary}
               />
             </View>
 
@@ -111,7 +115,7 @@ export function ChangePasswordModal({
                 onChangeText={setNewPassword}
                 secureTextEntry
                 placeholder='Enter new password (min 6 chars)'
-                placeholderTextColor={COLORS.secondary}
+                placeholderTextColor={colors.secondary}
               />
             </View>
 
@@ -123,7 +127,7 @@ export function ChangePasswordModal({
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 placeholder='Re-enter new password'
-                placeholderTextColor={COLORS.secondary}
+                placeholderTextColor={colors.secondary}
               />
             </View>
           </View>
@@ -151,80 +155,85 @@ export function ChangePasswordModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: COLORS.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modal: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    width: '100%',
-    maxWidth: 400,
-    ...SHADOWS.large,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  modalContent: {
-    padding: 20,
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  input: {
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: COLORS.primary,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-  },
-  modalBtn: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelBtn: {
-    backgroundColor: COLORS.bg,
-  },
-  submitBtn: {
-    backgroundColor: COLORS.accent,
-  },
-  cancelBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.secondary,
-  },
-  submitBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modal: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      width: '100%',
+      maxWidth: 400,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.1,
+      shadowRadius: 16,
+      elevation: 10,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    modalContent: {
+      padding: 20,
+      gap: 16,
+    },
+    inputGroup: {
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    input: {
+      backgroundColor: colors.bg,
+      borderRadius: 12,
+      padding: 16,
+      fontSize: 16,
+      color: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      padding: 20,
+      gap: 12,
+    },
+    modalBtn: {
+      flex: 1,
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    cancelBtn: {
+      backgroundColor: colors.bg,
+    },
+    submitBtn: {
+      backgroundColor: colors.accent,
+    },
+    cancelBtnText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.secondary,
+    },
+    submitBtnText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.white,
+    },
+  });

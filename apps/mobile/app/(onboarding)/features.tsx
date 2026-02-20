@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { storage } from '@/lib/storage';
 
 export default function FeaturesScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
 
   const handleSkip = async () => {
@@ -28,7 +31,7 @@ export default function FeaturesScreen() {
           style={styles.iconContainer}
         >
           <View style={styles.iconCircle}>
-            <Ionicons name='sparkles-outline' size={80} color={COLORS.accent} />
+            <Ionicons name='sparkles-outline' size={80} color={colors.accent} />
           </View>
         </Animated.View>
 
@@ -55,7 +58,7 @@ export default function FeaturesScreen() {
               <Ionicons
                 name={feature.icon as any}
                 size={24}
-                color={COLORS.accent}
+                color={colors.accent}
               />
               <Text style={styles.featureText}>{feature.text}</Text>
             </View>
@@ -83,10 +86,10 @@ export default function FeaturesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   skipBtn: {
     position: 'absolute',
@@ -97,7 +100,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   skipText: {
-    color: COLORS.secondary,
+    color: colors.secondary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -121,13 +124,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    color: COLORS.secondary,
+    color: colors.secondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
@@ -140,13 +143,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
   },
   featureText: {
     fontSize: 15,
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: '500',
     flex: 1,
   },
@@ -163,14 +166,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   dotActive: {
     width: 24,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
   },
   nextBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     height: 56,
     borderRadius: 28,
     flexDirection: 'row',

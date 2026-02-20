@@ -15,7 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { saveLog } from '@/lib/api';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface ManualLogModalProps {
   visible: boolean;
@@ -28,6 +29,9 @@ export default function ManualLogModal({
   onClose,
   onSuccess,
 }: ManualLogModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,7 +96,7 @@ export default function ManualLogModal({
           <View style={styles.header}>
             <Text style={styles.title}>Manual Log</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close' size={24} color={COLORS.secondary} />
+              <Ionicons name='close' size={24} color={colors.secondary} />
             </TouchableOpacity>
           </View>
 
@@ -103,7 +107,7 @@ export default function ManualLogModal({
                 <Ionicons
                   name='restaurant-outline'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -123,7 +127,7 @@ export default function ManualLogModal({
                 <Ionicons
                   name='flame-outline'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -144,14 +148,14 @@ export default function ManualLogModal({
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <ActivityIndicator color={colors.white} />
               ) : (
                 <>
                   <Text style={styles.saveButtonText}>Save Entry</Text>
                   <Ionicons
                     name='checkmark-circle'
                     size={20}
-                    color={COLORS.white}
+                    color={colors.white}
                   />
                 </>
               )}
@@ -163,95 +167,104 @@ export default function ManualLogModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: 32,
-    padding: 24,
-    ...SHADOWS.large,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  form: {
-    gap: 20,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    marginLeft: 4,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.bg,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 56,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  unitText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    marginLeft: 8,
-  },
-  saveButton: {
-    backgroundColor: COLORS.accent,
-    height: 56,
-    borderRadius: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
-    ...SHADOWS.medium,
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  saveButtonText: {
-    color: COLORS.white,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      padding: 20,
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderRadius: 32,
+      padding: 24,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.1,
+      shadowRadius: 16,
+      elevation: 10,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    closeButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    form: {
+      gap: 20,
+    },
+    inputGroup: {
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.secondary,
+      marginLeft: 4,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.bg,
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      height: 56,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.05)',
+    },
+    inputIcon: {
+      marginRight: 12,
+    },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    unitText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.secondary,
+      marginLeft: 8,
+    },
+    saveButton: {
+      backgroundColor: colors.accent,
+      height: 56,
+      borderRadius: 16,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+      marginTop: 10,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    disabledButton: {
+      opacity: 0.7,
+    },
+    saveButtonText: {
+      color: colors.white,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+  });

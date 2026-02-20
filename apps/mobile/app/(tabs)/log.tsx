@@ -21,7 +21,8 @@ import { useRouter } from 'expo-router';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { API_BASE_URL } from '@/constants/api';
 import { storage } from '@/lib/storage';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 type LogItem = {
   id: number;
@@ -32,6 +33,9 @@ type LogItem = {
 };
 
 export default function LogScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -133,18 +137,18 @@ export default function LogScreen() {
               style={styles.dateBtn}
               onPress={() => setShowDatePicker(true)}
             >
-              <Ionicons name='calendar' size={20} color={COLORS.primary} />
+              <Ionicons name='calendar' size={20} color={colors.primary} />
             </Pressable>
             <View style={styles.dividerVertical} />
             <Pressable style={styles.dateBtn} onPress={() => changeDate(-1)}>
-              <Ionicons name='chevron-back' size={20} color={COLORS.primary} />
+              <Ionicons name='chevron-back' size={20} color={colors.primary} />
             </Pressable>
             {!isToday && (
               <Pressable style={styles.dateBtn} onPress={() => changeDate(1)}>
                 <Ionicons
                   name='chevron-forward'
                   size={20}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
               </Pressable>
             )}
@@ -196,19 +200,19 @@ export default function LogScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={fetchLog}
-            tintColor={COLORS.accent}
+            tintColor={colors.accent}
           />
         }
       >
         {loading && logs.length === 0 && (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size='large' color={COLORS.accent} />
+            <ActivityIndicator size='large' color={colors.accent} />
           </View>
         )}
 
         {errorText && (
           <View style={styles.errorCard}>
-            <Ionicons name='alert-circle' size={20} color={COLORS.error} />
+            <Ionicons name='alert-circle' size={20} color={colors.error} />
             <Text style={styles.errorText}>{errorText}</Text>
           </View>
         )}
@@ -219,7 +223,7 @@ export default function LogScreen() {
               <Ionicons
                 name='clipboard-outline'
                 size={40}
-                color={COLORS.secondary}
+                color={colors.secondary}
               />
             </View>
             <Text style={styles.emptyTitle}>No meals logged</Text>
@@ -259,7 +263,7 @@ export default function LogScreen() {
                     <Ionicons
                       name='restaurant'
                       size={12}
-                      color={COLORS.white}
+                      color={colors.white}
                     />
                     <Text style={styles.mealBadgeText}>
                       {(() => {
@@ -316,249 +320,262 @@ export default function LogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: COLORS.bg,
-    zIndex: 10,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  dateSubtitle: {
-    fontSize: 14,
-    color: COLORS.secondary,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  dateActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dateBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.small,
-  },
-  dividerVertical: {
-    width: 1,
-    height: 20,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 4,
-    alignSelf: 'center',
-  },
-  summaryCard: {
-    backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 20,
-    ...SHADOWS.medium,
-  },
-  summaryInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
-    marginTop: 2,
-  },
-  summaryGoal: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.secondary,
-  },
-  percentageBadge: {
-    backgroundColor: COLORS.accentSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  percentageText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.accent,
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: COLORS.bg,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: COLORS.accent,
-    borderRadius: 4,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  centerContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  errorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFE5E5',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontWeight: '500',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingTop: 60,
-    opacity: 0.8,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#EAEAEA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: 8,
-  },
-  emptyText: {
-    color: COLORS.secondary,
-  },
-  timeline: {
-    marginTop: 10,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  timelineLeft: {
-    width: 30,
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  nodeLine: {
-    position: 'absolute',
-    top: 20,
-    bottom: -30,
-    width: 2,
-    backgroundColor: COLORS.border,
-    zIndex: -1,
-  },
-  nodeCircle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: COLORS.border,
-    marginTop: 18,
-    borderWidth: 2,
-    borderColor: COLORS.bg,
-  },
-  nodeActive: {
-    backgroundColor: COLORS.accent,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  logCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    ...SHADOWS.small,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  mealBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    gap: 6,
-  },
-  mealBadgeText: {
-    color: COLORS.white,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    fontWeight: '500',
-  },
-  cardContentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cardTextContent: {
-    flex: 1,
-  },
-  mealThumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: COLORS.bg,
-  },
-  totalKcal: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  unit: {
-    fontSize: 14,
-    color: COLORS.secondary,
-    fontWeight: '500',
-  },
-  itemPreview: {
-    marginTop: 4,
-  },
-  itemPreviewText: {
-    fontSize: 13,
-    color: COLORS.secondary,
-    fontWeight: '500',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    header: {
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 16,
+      backgroundColor: colors.bg,
+      zIndex: 10,
+    },
+    headerTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    dateSubtitle: {
+      fontSize: 14,
+      color: colors.secondary,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+    dateActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    dateBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    dividerVertical: {
+      width: 1,
+      height: 20,
+      backgroundColor: colors.border,
+      marginHorizontal: 4,
+      alignSelf: 'center',
+    },
+    summaryCard: {
+      backgroundColor: colors.surface,
+      padding: 16,
+      borderRadius: 20,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
+    },
+    summaryInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    summaryLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.secondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    summaryValue: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.primary,
+      marginTop: 2,
+    },
+    summaryGoal: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.secondary,
+    },
+    percentageBadge: {
+      backgroundColor: colors.accentSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    percentageText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    progressBarBg: {
+      height: 8,
+      backgroundColor: colors.bg,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: colors.accent,
+      borderRadius: 4,
+    },
+    content: {
+      paddingHorizontal: 20,
+      paddingBottom: 40,
+    },
+    centerContainer: {
+      padding: 40,
+      alignItems: 'center',
+    },
+    errorCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFE5E5',
+      padding: 16,
+      borderRadius: 12,
+      gap: 12,
+      marginBottom: 20,
+    },
+    errorText: {
+      color: colors.error,
+      fontWeight: '500',
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingTop: 60,
+      opacity: 0.8,
+    },
+    emptyIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: '#EAEAEA',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.primary,
+      marginBottom: 8,
+    },
+    emptyText: {
+      color: colors.secondary,
+    },
+    timeline: {
+      marginTop: 10,
+    },
+    timelineItem: {
+      flexDirection: 'row',
+      marginBottom: 24,
+    },
+    timelineLeft: {
+      width: 30,
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    nodeLine: {
+      position: 'absolute',
+      top: 20,
+      bottom: -30,
+      width: 2,
+      backgroundColor: colors.border,
+      zIndex: -1,
+    },
+    nodeCircle: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.border,
+      marginTop: 18,
+      borderWidth: 2,
+      borderColor: colors.bg,
+    },
+    nodeActive: {
+      backgroundColor: colors.accent,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+    },
+    logCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    mealBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.accent,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderRadius: 8,
+      gap: 6,
+    },
+    mealBadgeText: {
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    timestamp: {
+      fontSize: 12,
+      color: colors.secondary,
+      fontWeight: '500',
+    },
+    cardContentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    cardTextContent: {
+      flex: 1,
+    },
+    mealThumbnail: {
+      width: 60,
+      height: 60,
+      borderRadius: 12,
+      backgroundColor: colors.bg,
+    },
+    totalKcal: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    unit: {
+      fontSize: 14,
+      color: colors.secondary,
+      fontWeight: '500',
+    },
+    itemPreview: {
+      marginTop: 4,
+    },
+    itemPreviewText: {
+      fontSize: 13,
+      color: colors.secondary,
+      fontWeight: '500',
+    },
+  });

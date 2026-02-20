@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
 import { authenticatedFetch } from '@/lib/authFetch';
@@ -23,6 +24,9 @@ import PrivacyModal from '@/components/PrivacyModal';
 import { API_BASE_URL } from '@/lib/api';
 
 export default function ProfileScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [editingName, setEditingName] = useState(false);
@@ -238,7 +242,7 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name='arrow-back' size={24} color={COLORS.white} />
+          <Ionicons name='arrow-back' size={24} color={colors.white} />
         </Pressable>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 40 }} />
@@ -260,7 +264,7 @@ export default function ProfileScreen() {
                 style={styles.avatarImage}
               />
             ) : (
-              <Ionicons name='person' size={64} color={COLORS.white} />
+              <Ionicons name='person' size={64} color={colors.white} />
             )}
           </View>
           <Pressable
@@ -273,7 +277,7 @@ export default function ProfileScreen() {
               ]);
             }}
           >
-            <Ionicons name='camera' size={20} color={COLORS.accent} />
+            <Ionicons name='camera' size={20} color={colors.accent} />
           </Pressable>
         </Animated.View>
 
@@ -288,7 +292,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name='person-outline'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                 />
               </View>
               <View style={styles.infoContent}>
@@ -299,7 +303,7 @@ export default function ProfileScreen() {
                     value={name}
                     onChangeText={setName}
                     placeholder='Enter your name'
-                    placeholderTextColor={COLORS.secondary}
+                    placeholderTextColor={colors.secondary}
                     autoFocus
                   />
                 ) : (
@@ -310,11 +314,11 @@ export default function ProfileScreen() {
               </View>
               {editingName ? (
                 <Pressable onPress={handleSaveName}>
-                  <Ionicons name='checkmark' size={24} color={COLORS.accent} />
+                  <Ionicons name='checkmark' size={24} color={colors.accent} />
                 </Pressable>
               ) : (
                 <Pressable onPress={() => setEditingName(true)}>
-                  <Ionicons name='pencil' size={20} color={COLORS.secondary} />
+                  <Ionicons name='pencil' size={20} color={colors.secondary} />
                 </Pressable>
               )}
             </View>
@@ -324,7 +328,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <Ionicons name='flame-outline' size={20} color={COLORS.error} />
+                <Ionicons name='flame-outline' size={20} color={colors.error} />
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Daily Calorie Goal</Text>
@@ -334,7 +338,7 @@ export default function ProfileScreen() {
                     value={calorieGoal}
                     onChangeText={setCalorieGoal}
                     placeholder='2000'
-                    placeholderTextColor={COLORS.secondary}
+                    placeholderTextColor={colors.secondary}
                     keyboardType='numeric'
                     autoFocus
                   />
@@ -346,11 +350,11 @@ export default function ProfileScreen() {
               </View>
               {editingGoal ? (
                 <Pressable onPress={handleSaveGoal}>
-                  <Ionicons name='checkmark' size={24} color={COLORS.accent} />
+                  <Ionicons name='checkmark' size={24} color={colors.accent} />
                 </Pressable>
               ) : (
                 <Pressable onPress={() => setEditingGoal(true)}>
-                  <Ionicons name='pencil' size={20} color={COLORS.secondary} />
+                  <Ionicons name='pencil' size={20} color={colors.secondary} />
                 </Pressable>
               )}
             </View>
@@ -360,7 +364,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <Ionicons name='mail-outline' size={20} color={COLORS.accent} />
+                <Ionicons name='mail-outline' size={20} color={colors.accent} />
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
@@ -382,14 +386,14 @@ export default function ProfileScreen() {
               <Ionicons
                 name='lock-closed-outline'
                 size={20}
-                color={COLORS.accent}
+                color={colors.accent}
               />
             </View>
             <Text style={styles.settingText}>Change Password</Text>
             <Ionicons
               name='chevron-forward'
               size={20}
-              color={COLORS.secondary}
+              color={colors.secondary}
             />
           </Pressable>
 
@@ -401,14 +405,14 @@ export default function ProfileScreen() {
               <Ionicons
                 name='notifications-outline'
                 size={20}
-                color={COLORS.accent}
+                color={colors.accent}
               />
             </View>
             <Text style={styles.settingText}>Notifications</Text>
             <Ionicons
               name='chevron-forward'
               size={20}
-              color={COLORS.secondary}
+              color={colors.secondary}
             />
           </Pressable>
 
@@ -417,13 +421,13 @@ export default function ProfileScreen() {
             onPress={() => setShowPrivacyModal(true)}
           >
             <View style={styles.settingIcon}>
-              <Ionicons name='shield-outline' size={20} color={COLORS.accent} />
+              <Ionicons name='shield-outline' size={20} color={colors.accent} />
             </View>
             <Text style={styles.settingText}>Privacy</Text>
             <Ionicons
               name='chevron-forward'
               size={20}
-              color={COLORS.secondary}
+              color={colors.secondary}
             />
           </Pressable>
         </Animated.View>
@@ -431,7 +435,7 @@ export default function ProfileScreen() {
         {/* Danger Zone */}
         <Animated.View entering={FadeInDown.delay(400)} style={styles.section}>
           <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-            <Ionicons name='log-out-outline' size={20} color={COLORS.error} />
+            <Ionicons name='log-out-outline' size={20} color={colors.error} />
             <Text style={styles.logoutText}>Logout</Text>
           </Pressable>
         </Animated.View>
@@ -455,13 +459,13 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
@@ -478,7 +482,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.white,
+    color: colors.white,
   },
   content: {
     flex: 1,
@@ -496,7 +500,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.medium,
@@ -514,7 +518,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.small,
@@ -525,11 +529,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: colors.primary,
     marginBottom: 12,
   },
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -543,7 +547,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: COLORS.accentSoft,
+    backgroundColor: colors.accentSoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -553,22 +557,22 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: COLORS.secondary,
+    color: colors.secondary,
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: colors.primary,
   },
   input: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: colors.primary,
     padding: 0,
   },
   settingCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -580,7 +584,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: COLORS.accentSoft,
+    backgroundColor: colors.accentSoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -589,10 +593,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: colors.primary,
   },
   logoutBtn: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -600,11 +604,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error,
+    borderColor: colors.error,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.error,
+    color: colors.error,
   },
 });

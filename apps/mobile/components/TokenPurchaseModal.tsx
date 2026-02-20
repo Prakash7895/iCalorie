@@ -12,18 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getScanPricing, PricingInfo, TokenPackage } from '@/lib/api';
 
-const COLORS = {
-  background: '#0A0E27',
-  card: '#151932',
-  cardHover: '#1A1F3A',
-  primary: '#6C63FF',
-  accent: '#FF6584',
-  text: '#FFFFFF',
-  textSecondary: '#A0A0C8',
-  success: '#4ADE80',
-  border: '#2A2F4A',
-};
-
+import { useThemeColor } from '@/hooks/useThemeColor';
 interface TokenPurchaseModalProps {
   visible: boolean;
   onClose: () => void;
@@ -37,6 +26,9 @@ export default function TokenPurchaseModal({
   currentBalance,
   onPurchaseComplete,
 }: TokenPurchaseModalProps) {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<TokenPackage | null>(
@@ -140,14 +132,14 @@ export default function TokenPurchaseModal({
 
         {pkg.savings_percent > 0 && (
           <View style={styles.savingsBadge}>
-            <Ionicons name='pricetag' size={14} color={COLORS.success} />
+            <Ionicons name='pricetag' size={14} color={colors.accent} />
             <Text style={styles.savingsText}>Save {pkg.savings_percent}%</Text>
           </View>
         )}
 
         {purchasing && isSelected ? (
           <View style={styles.purchaseButton}>
-            <ActivityIndicator color={COLORS.text} size='small' />
+            <ActivityIndicator color={colors.primary} size='small' />
           </View>
         ) : (
           <View
@@ -178,7 +170,7 @@ export default function TokenPurchaseModal({
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close' size={28} color={COLORS.text} />
+              <Ionicons name='close' size={28} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -190,7 +182,7 @@ export default function TokenPurchaseModal({
           >
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size='large' color={COLORS.primary} />
+                <ActivityIndicator size='large' color={colors.primary} />
                 <Text style={styles.loadingText}>Loading packages...</Text>
               </View>
             ) : (
@@ -212,7 +204,7 @@ export default function TokenPurchaseModal({
                   <Ionicons
                     name='information-circle-outline'
                     size={20}
-                    color={COLORS.textSecondary}
+                    color={colors.secondary}
                   />
                   <Text style={styles.footerText}>
                     Scans never expire and can be used anytime. Your balance is
@@ -228,168 +220,169 @@ export default function TokenPurchaseModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
-    height: '100%',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  scrollContentContainer: {
-    paddingBottom: 20,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
-  infoText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  packagesContainer: {
-    padding: 20,
-    gap: 16,
-  },
-  packageCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    position: 'relative',
-  },
-  popularCard: {
-    borderColor: COLORS.primary,
-    transform: [{ scale: 1.02 }],
-  },
-  selectedCard: {
-    borderColor: COLORS.accent,
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -10,
-    right: 16,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  popularText: {
-    color: COLORS.text,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  packageHeader: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  packageScans: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  packageLabel: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  packagePricing: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  packagePrice: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  pricePerScan: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  savingsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    marginBottom: 16,
-  },
-  savingsText: {
-    color: COLORS.success,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  purchaseButton: {
-    backgroundColor: COLORS.cardHover,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  popularButton: {
-    backgroundColor: COLORS.primary,
-  },
-  purchaseButtonText: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    padding: 20,
-    backgroundColor: COLORS.card,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-  },
-  footerText: {
-    flex: 1,
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.bg,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 20,
+      height: '100%',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.secondary,
+    },
+    closeButton: {
+      padding: 4,
+    },
+    scrollContent: {
+      flex: 1,
+    },
+    scrollContentContainer: {
+      paddingBottom: 20,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      marginTop: 12,
+      color: colors.secondary,
+      fontSize: 14,
+    },
+    infoText: {
+      color: colors.secondary,
+      fontSize: 14,
+      lineHeight: 20,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
+    packagesContainer: {
+      padding: 20,
+      gap: 16,
+    },
+    packageCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 2,
+      borderColor: colors.border,
+      position: 'relative',
+    },
+    popularCard: {
+      borderColor: colors.accent,
+      transform: [{ scale: 1.02 }],
+    },
+    selectedCard: {
+      borderColor: colors.error,
+    },
+    popularBadge: {
+      position: 'absolute',
+      top: -10,
+      right: 16,
+      backgroundColor: colors.accent,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    popularText: {
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
+    packageHeader: {
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    packageScans: {
+      fontSize: 48,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    packageLabel: {
+      fontSize: 14,
+      color: colors.secondary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    packagePricing: {
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    packagePrice: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: colors.accent,
+      marginBottom: 4,
+    },
+    pricePerScan: {
+      fontSize: 12,
+      color: colors.secondary,
+    },
+    savingsBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      marginBottom: 16,
+    },
+    savingsText: {
+      color: colors.accent,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    purchaseButton: {
+      backgroundColor: colors.border,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    popularButton: {
+      backgroundColor: colors.accent,
+    },
+    purchaseButtonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      padding: 20,
+      backgroundColor: colors.surface,
+      marginHorizontal: 20,
+      marginBottom: 20,
+      borderRadius: 12,
+    },
+    footerText: {
+      flex: 1,
+      color: colors.secondary,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+  });

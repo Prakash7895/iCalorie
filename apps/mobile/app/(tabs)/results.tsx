@@ -31,17 +31,7 @@ import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window');
 
-const COLORS = {
-  bg: '#F8F9FA',
-  surface: '#FFFFFF',
-  primary: '#2D3436', // Dark elegant text
-  secondary: '#636E72', // Muted text
-  accent: '#00B894', // Minty fresh
-  error: '#FF7675',
-  border: '#DFE6E9',
-  shadow: '#2D3436',
-  white: '#FFFFFF',
-};
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 type FoodItem = {
   name: string;
@@ -54,6 +44,9 @@ type FoodItem = {
 };
 
 export default function ResultsScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const [items, setItems] = useState<FoodItem[]>([]);
@@ -248,7 +241,7 @@ export default function ResultsScreen() {
               <Ionicons
                 name='image-outline'
                 size={48}
-                color={COLORS.secondary}
+                color={colors.secondary}
               />
               <Text style={styles.placeholderText}>No image selected</Text>
             </View>
@@ -295,7 +288,7 @@ export default function ResultsScreen() {
         {/* Error Message */}
         {errorText && (
           <Animated.View entering={FadeIn} style={styles.errorCard}>
-            <Ionicons name='alert-circle' size={24} color={COLORS.error} />
+            <Ionicons name='alert-circle' size={24} color={colors.error} />
             <Text style={styles.errorText}>{errorText}</Text>
             <Pressable onPress={runScan} style={styles.retryButton}>
               <Text style={styles.retryText}>Retry</Text>
@@ -317,7 +310,7 @@ export default function ResultsScreen() {
                 <Ionicons
                   name='restaurant-outline'
                   size={20}
-                  color={COLORS.accent}
+                  color={colors.accent}
                 />
               </View>
 
@@ -366,7 +359,7 @@ export default function ResultsScreen() {
             disabled={loading}
           >
             <View style={styles.discardContent}>
-              <Ionicons name='trash-outline' size={22} color={COLORS.error} />
+              <Ionicons name='trash-outline' size={22} color={colors.error} />
               <Text style={styles.discardText}>Discard</Text>
             </View>
           </Pressable>
@@ -391,324 +384,325 @@ export default function ResultsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  scrollContent: {
-    paddingBottom: 60,
-  },
-  imageContainer: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    position: 'relative',
-    backgroundColor: '#000',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    overflow: 'hidden',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  imageWrapper: {
-    flex: 1,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
-    opacity: 0.9,
-  },
-  scanOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  scanLine: {
-    width: '100%',
-    height: 3,
-    backgroundColor: COLORS.accent,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-  },
-  scanGlitch: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.accent,
-    opacity: 0.05,
-  },
-  statusBadge: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  analyzingTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  successTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.accent,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  statusText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  placeholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E1E1E1',
-  },
-  placeholderText: {
-    marginTop: 12,
-    color: COLORS.secondary,
-    fontSize: 16,
-  },
-  totalSection: {
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  totalLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.secondary,
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  totalValue: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  unit: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.secondary,
-  },
-  macrosSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    marginTop: 16,
-    ...SHADOWS.small,
-  },
-  macroItemHeader: {
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  macroValueHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  macroLabelHeader: {
-    fontSize: 11,
-    color: COLORS.secondary,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  macroDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: COLORS.border,
-  },
-  listContainer: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 16,
-  },
-  itemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Platform.OS === 'ios' ? 'transparent' : COLORS.border,
-  },
-  itemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E0F2F1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  itemMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemDetail: {
-    fontSize: 13,
-    color: COLORS.secondary,
-    fontWeight: '500',
-  },
-  itemMacroSplit: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    opacity: 0.8,
-  },
-  confidenceTag: {
-    backgroundColor: '#F0F3F4',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  confidenceText: {
-    fontSize: 10,
-    color: COLORS.secondary,
-    fontWeight: '600',
-  },
-  itemCalories: {
-    alignItems: 'flex-end',
-  },
-  calorieCount: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  calorieLabel: {
-    fontSize: 12,
-    color: COLORS.secondary,
-  },
-  errorCard: {
-    margin: 20,
-    padding: 16,
-    backgroundColor: '#FFE5E5',
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  errorText: {
-    flex: 1,
-    color: '#D63031',
-    fontWeight: '500',
-  },
-  retryButton: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  retryText: {
-    color: '#D63031',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  emptyState: {
-    textAlign: 'center',
-    color: COLORS.secondary,
-    marginTop: 20,
-    fontStyle: 'italic',
-  },
-  actionBar: {
-    position: 'absolute',
-    bottom: 10,
-    left: 20,
-    right: 20,
-    borderRadius: 28,
-    overflow: 'hidden',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  blurContainer: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    padding: 8,
-    backgroundColor:
-      Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : undefined,
-  },
-  secondaryBtn: {
-    flex: 0.4,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#FFF1F1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#FFEFEF',
-  },
-  discardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  discardText: {
-    color: COLORS.error,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  primaryBtn: {
-    flex: 0.6,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: COLORS.accent,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    ...SHADOWS.medium,
-  },
-  disabledBtn: {
-    opacity: 0.7,
-  },
-  primaryBtnText: {
-    color: '#FFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    scrollContent: {
+      paddingBottom: 60,
+    },
+    imageContainer: {
+      width: '100%',
+      aspectRatio: 4 / 3,
+      position: 'relative',
+      backgroundColor: '#000',
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      overflow: 'hidden',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    imageWrapper: {
+      flex: 1,
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'contain',
+      opacity: 0.9,
+    },
+    scanOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.2)',
+    },
+    scanLine: {
+      width: '100%',
+      height: 3,
+      backgroundColor: colors.accent,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+    },
+    scanGlitch: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.accent,
+      opacity: 0.05,
+    },
+    statusBadge: {
+      position: 'absolute',
+      bottom: 20,
+      left: 20,
+      right: 20,
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    analyzingTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    successTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.accent,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+    },
+    statusText: {
+      color: '#FFF',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    placeholder: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#E1E1E1',
+    },
+    placeholderText: {
+      marginTop: 12,
+      color: colors.secondary,
+      fontSize: 16,
+    },
+    totalSection: {
+      alignItems: 'center',
+      marginTop: 24,
+      marginBottom: 8,
+    },
+    totalLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.secondary,
+      letterSpacing: 1.5,
+      marginBottom: 4,
+    },
+    totalValue: {
+      fontSize: 48,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    unit: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.secondary,
+    },
+    macrosSummary: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.white,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 20,
+      marginTop: 16,
+      ...SHADOWS.small,
+    },
+    macroItemHeader: {
+      alignItems: 'center',
+      paddingHorizontal: 12,
+    },
+    macroValueHeader: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    macroLabelHeader: {
+      fontSize: 11,
+      color: colors.secondary,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+    macroDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: colors.border,
+    },
+    listContainer: {
+      padding: 20,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 16,
+    },
+    itemCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      padding: 16,
+      borderRadius: 16,
+      marginBottom: 12,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: Platform.OS === 'ios' ? 'transparent' : colors.border,
+    },
+    itemIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#E0F2F1',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    itemContent: {
+      flex: 1,
+    },
+    itemName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    itemMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    itemDetail: {
+      fontSize: 13,
+      color: colors.secondary,
+      fontWeight: '500',
+    },
+    itemMacroSplit: {
+      fontSize: 12,
+      color: colors.secondary,
+      opacity: 0.8,
+    },
+    confidenceTag: {
+      backgroundColor: '#F0F3F4',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    confidenceText: {
+      fontSize: 10,
+      color: colors.secondary,
+      fontWeight: '600',
+    },
+    itemCalories: {
+      alignItems: 'flex-end',
+    },
+    calorieCount: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    calorieLabel: {
+      fontSize: 12,
+      color: colors.secondary,
+    },
+    errorCard: {
+      margin: 20,
+      padding: 16,
+      backgroundColor: '#FFE5E5',
+      borderRadius: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    errorText: {
+      flex: 1,
+      color: '#D63031',
+      fontWeight: '500',
+    },
+    retryButton: {
+      backgroundColor: '#FFF',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    retryText: {
+      color: '#D63031',
+      fontWeight: '600',
+      fontSize: 12,
+    },
+    emptyState: {
+      textAlign: 'center',
+      color: colors.secondary,
+      marginTop: 20,
+      fontStyle: 'italic',
+    },
+    actionBar: {
+      position: 'absolute',
+      bottom: 10,
+      left: 20,
+      right: 20,
+      borderRadius: 28,
+      overflow: 'hidden',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    blurContainer: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      padding: 8,
+      backgroundColor:
+        Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : undefined,
+    },
+    secondaryBtn: {
+      flex: 0.4,
+      height: 54,
+      borderRadius: 27,
+      backgroundColor: '#FFF1F1',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: '#FFEFEF',
+    },
+    discardContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    discardText: {
+      color: colors.error,
+      fontWeight: '700',
+      fontSize: 15,
+    },
+    primaryBtn: {
+      flex: 0.6,
+      height: 54,
+      borderRadius: 27,
+      backgroundColor: colors.accent,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+      ...SHADOWS.medium,
+    },
+    disabledBtn: {
+      opacity: 0.7,
+    },
+    primaryBtnText: {
+      color: '#FFF',
+      fontSize: 17,
+      fontWeight: '700',
+    },
+  });

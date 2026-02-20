@@ -25,7 +25,8 @@ import Animated, {
 import { getLog, getSummary, API_BASE_URL } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { authenticatedFetch } from '@/lib/authFetch';
-import { COLORS, SHADOWS } from '@/constants/colors';
+import { SHADOWS } from '@/constants/colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart } from '@/components/ui/BarChart';
@@ -35,6 +36,9 @@ import FeedbackModal from '@/components/FeedbackModal';
 import HomeHeader from '@/components/HomeHeader';
 
 export default function HomeScreen() {
+  const colors = useThemeColor();
+  const styles = createStyles(colors);
+
   const router = useRouter();
   const [userName, setUserName] = useState<string>('');
   const [user, setUser] = useState<any>(null);
@@ -266,7 +270,7 @@ export default function HomeScreen() {
                 setLoading(false);
               }
             }}
-            tintColor={COLORS.accent}
+            tintColor={colors.accent}
             progressViewOffset={HEADER_MAX_HEIGHT}
           />
         }
@@ -294,7 +298,7 @@ export default function HomeScreen() {
                     <Ionicons
                       name='settings-outline'
                       size={20}
-                      color={COLORS.secondary}
+                      color={colors.secondary}
                     />
                   </Pressable>
                   <ProgressRing
@@ -310,12 +314,12 @@ export default function HomeScreen() {
                           : 'warning-outline'
                       }
                       size={16}
-                      color={kcalRemaining >= 0 ? COLORS.accent : COLORS.error}
+                      color={kcalRemaining >= 0 ? colors.accent : colors.error}
                     />
                     <Text
                       style={[
                         styles.cardInsightText,
-                        kcalRemaining < 0 && { color: COLORS.error },
+                        kcalRemaining < 0 && { color: colors.error },
                       ]}
                     >
                       {kcalRemaining >= 0
@@ -345,7 +349,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name='stats-chart'
                         size={14}
-                        color={COLORS.accent}
+                        color={colors.accent}
                       />
                       <Text style={styles.cardInsightText}>
                         Avg: {weeklyAvg} kcal
@@ -355,7 +359,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name='checkmark-circle'
                         size={14}
-                        color={COLORS.accent}
+                        color={colors.accent}
                       />
                       <Text style={styles.cardInsightText}>
                         Met Goal: {daysMetGoal}/7 days
@@ -419,7 +423,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name='fast-food-outline'
                         size={20}
-                        color={COLORS.accent}
+                        color={colors.accent}
                       />
                     </View>
                   )}
@@ -475,7 +479,7 @@ export default function HomeScreen() {
 
       {/* Feedback FAB */}
       <Pressable style={styles.fab} onPress={() => setFeedbackVisible(true)}>
-        <Ionicons name='chatbubble-ellipses' size={24} color={COLORS.white} />
+        <Ionicons name='chatbubble-ellipses' size={24} color={colors.white} />
       </Pressable>
 
       <FeedbackModal
@@ -486,238 +490,253 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-    gap: 16,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-    gap: 16,
-  },
-  carouselContainer: {
-    marginVertical: 10,
-    marginHorizontal: -20,
-    overflow: 'visible',
-  },
-  carouselContent: {
-    paddingHorizontal: 0,
-    paddingBottom: 20,
-  },
-  carouselCard: {
-    paddingHorizontal: 20,
-    width: '100%',
-  },
-  ringCard: {
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderRadius: 24,
-    alignItems: 'center',
-    ...SHADOWS.medium,
-    height: 260,
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  cardSettingsBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  summarySection: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    ...SHADOWS.medium,
-    height: 260,
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-  barChartContainer: {
-    backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
-    padding: 20,
-    paddingBottom: 10,
-  },
-  cardInsightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  cardInsightText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.secondary,
-  },
-  trendMetric: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  activeDot: {
-    width: 16,
-    backgroundColor: COLORS.accent,
-  },
-  avatarContainer: {
-    marginLeft: 16,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    overflow: 'hidden',
-  },
-  editGoalBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: COLORS.bg,
-  },
-  editGoalText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.secondary,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionBtn: {
-    flex: 1,
-  },
-  section: {
-    gap: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  mealCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    padding: 12,
-    borderRadius: 20,
-    marginBottom: 12,
-    ...SHADOWS.small,
-  },
-  mealThumbnail: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: COLORS.bg,
-  },
-  mealIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mealInfo: {
-    flex: 1,
-    marginLeft: 16,
-    marginRight: 8,
-  },
-  mealHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  mealName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  mealTime: {
-    fontSize: 12,
-    color: COLORS.secondary,
-    fontWeight: '500',
-  },
-  mealItems: {
-    fontSize: 13,
-    color: COLORS.secondary,
-    marginTop: 4,
-    fontWeight: '400',
-  },
-  mealKcalBadge: {
-    alignItems: 'flex-end',
-    minWidth: 50,
-  },
-  mealKcal: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  mealKcalUnit: {
-    fontSize: 11,
-    color: COLORS.secondary,
-    fontWeight: '600',
-    marginTop: -2,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: COLORS.secondary,
-    marginTop: 20,
-    fontStyle: 'italic',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 22,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 10,
-    zIndex: 100,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    screen: {
+      backgroundColor: colors.bg,
+    },
+    content: {
+      paddingHorizontal: 20,
+      paddingBottom: 100,
+      gap: 16,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 100,
+      gap: 16,
+    },
+    carouselContainer: {
+      marginVertical: 10,
+      marginHorizontal: -20,
+      overflow: 'visible',
+    },
+    carouselContent: {
+      paddingHorizontal: 0,
+      paddingBottom: 20,
+    },
+    carouselCard: {
+      paddingHorizontal: 20,
+      width: '100%',
+    },
+    ringCard: {
+      backgroundColor: colors.surface,
+      padding: 20,
+      borderRadius: 24,
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
+      height: 260,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    cardSettingsBtn: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    summarySection: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
+      height: 260,
+      overflow: 'hidden',
+      justifyContent: 'center',
+    },
+    barChartContainer: {
+      backgroundColor: 'transparent',
+      shadowOpacity: 0,
+      elevation: 0,
+      padding: 20,
+      paddingBottom: 10,
+    },
+    cardInsightRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 12,
+    },
+    cardInsightText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.secondary,
+    },
+    trendMetric: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+    },
+    pagination: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 12,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.secondary,
+      opacity: 0.3,
+    },
+    activeDot: {
+      width: 16,
+      backgroundColor: colors.accent,
+      opacity: 1,
+    },
+    avatarContainer: {
+      marginLeft: 16,
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.accent,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+      overflow: 'hidden',
+    },
+    editGoalBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      backgroundColor: colors.bg,
+    },
+    editGoalText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.secondary,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    actionBtn: {
+      flex: 1,
+    },
+    section: {
+      gap: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    mealCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      padding: 12,
+      borderRadius: 20,
+      marginBottom: 12,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    mealThumbnail: {
+      width: 54,
+      height: 54,
+      borderRadius: 14,
+      backgroundColor: colors.bg,
+    },
+    mealIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 14,
+      backgroundColor: colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    mealInfo: {
+      flex: 1,
+      marginLeft: 16,
+      marginRight: 8,
+    },
+    mealHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    mealName: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    mealTime: {
+      fontSize: 12,
+      color: colors.secondary,
+      fontWeight: '500',
+    },
+    mealItems: {
+      fontSize: 13,
+      color: colors.secondary,
+      marginTop: 4,
+      fontWeight: '400',
+    },
+    mealKcalBadge: {
+      alignItems: 'flex-end',
+      minWidth: 50,
+    },
+    mealKcal: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    mealKcalUnit: {
+      fontSize: 11,
+      color: colors.secondary,
+      fontWeight: '600',
+      marginTop: -2,
+    },
+    emptyText: {
+      textAlign: 'center',
+      color: colors.secondary,
+      marginTop: 20,
+      fontStyle: 'italic',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 22,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 30,
+      right: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.accent,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.45,
+      shadowRadius: 12,
+      elevation: 10,
+      zIndex: 100,
+    },
+  });
