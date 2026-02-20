@@ -42,6 +42,7 @@ class Settings(BaseModel):
 
     # Google OAuth
     google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 
 settings = Settings()
