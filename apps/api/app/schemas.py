@@ -51,6 +51,10 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6)
 
 
+class GoogleAuthRequest(BaseModel):
+    id_token: str  # Google ID token from expo-auth-session
+
+
 class TokenBalanceResponse(BaseModel):
     scans_remaining: int
 
@@ -143,3 +147,17 @@ class PricingInfo(BaseModel):
 
     packages: List[TokenPackage]
     price_per_scan: float
+
+
+# Feedback Schemas
+class FeedbackRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+
+
+class FeedbackResponse(BaseModel):
+    id: int
+    message: str
+    created_at: str
+
+    class Config:
+        from_attributes = True

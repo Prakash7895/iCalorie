@@ -18,6 +18,8 @@ import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
 import { authenticatedFetch } from '@/lib/authFetch';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
+import NotificationsModal from '@/components/NotificationsModal';
+import PrivacyModal from '@/components/PrivacyModal';
 import { API_BASE_URL } from '@/lib/api';
 
 export default function ProfileScreen() {
@@ -28,6 +30,8 @@ export default function ProfileScreen() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [calorieGoal, setCalorieGoal] = useState('2000');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -389,7 +393,10 @@ export default function ProfileScreen() {
             />
           </Pressable>
 
-          <Pressable style={styles.settingCard}>
+          <Pressable
+            style={styles.settingCard}
+            onPress={() => setShowNotificationsModal(true)}
+          >
             <View style={styles.settingIcon}>
               <Ionicons
                 name='notifications-outline'
@@ -405,7 +412,10 @@ export default function ProfileScreen() {
             />
           </Pressable>
 
-          <Pressable style={styles.settingCard}>
+          <Pressable
+            style={styles.settingCard}
+            onPress={() => setShowPrivacyModal(true)}
+          >
             <View style={styles.settingIcon}>
               <Ionicons name='shield-outline' size={20} color={COLORS.accent} />
             </View>
@@ -432,6 +442,14 @@ export default function ProfileScreen() {
         visible={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
         onSuccess={() => {}}
+      />
+      <NotificationsModal
+        visible={showNotificationsModal}
+        onClose={() => setShowNotificationsModal(false)}
+      />
+      <PrivacyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
     </View>
   );

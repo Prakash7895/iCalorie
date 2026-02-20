@@ -41,6 +41,28 @@ export const auth = {
     return data;
   },
 
+  async loginWithGoogle(idToken: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ detail: 'Google sign-in failed' }));
+      throw new Error(error.detail || 'Google sign-in failed');
+    }
+
+    const data: AuthResponse = await response.json();
+    await storage.setAuthToken(data.token);
+    await storage.setUserData(data.user);
+    return data;
+  },
+
   async signup(
     email: string,
     password: string,

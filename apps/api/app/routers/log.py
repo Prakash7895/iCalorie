@@ -158,6 +158,17 @@ async def get_meal_log(
     }
 
 
+@router.delete("/all")
+async def delete_all_meal_logs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete all meal logs for the current user."""
+    db.query(MealLog).filter(MealLog.user_id == current_user.id).delete()
+    db.commit()
+    return {"status": "ok", "message": "All meal history deleted"}
+
+
 @router.delete("/{log_id}")
 async def delete_meal_log(
     log_id: int,

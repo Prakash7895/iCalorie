@@ -31,6 +31,7 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart } from '@/components/ui/BarChart';
 import TokenPurchaseModal from '@/components/TokenPurchaseModal';
 import ManualLogModal from '@/components/ManualLogModal';
+import FeedbackModal from '@/components/FeedbackModal';
 import HomeHeader from '@/components/HomeHeader';
 
 export default function HomeScreen() {
@@ -56,6 +57,7 @@ export default function HomeScreen() {
   >([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [manualLogVisible, setManualLogVisible] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
 
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const scrollY = useSharedValue(0);
@@ -470,6 +472,16 @@ export default function HomeScreen() {
           fetchWeeklySummary();
         }}
       />
+
+      {/* Feedback FAB */}
+      <Pressable style={styles.fab} onPress={() => setFeedbackVisible(true)}>
+        <Ionicons name='chatbubble-ellipses' size={24} color={COLORS.white} />
+      </Pressable>
+
+      <FeedbackModal
+        visible={feedbackVisible}
+        onClose={() => setFeedbackVisible(false)}
+      />
     </>
   );
 }
@@ -690,5 +702,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 22,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 100,
   },
 });

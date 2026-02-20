@@ -11,6 +11,7 @@ from app.schemas import (
     UserResponse,
     UpdateProfileRequest,
     ChangePasswordRequest,
+    GoogleAuthRequest,
     TokenBalanceResponse,
     PurchaseTokensRequest,
     TokenUsageResponse,
@@ -100,6 +101,77 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             email=user.email,
             name=user.name,
             profile_picture_url=get_s3_url(user.profile_picture_url),
+            created_at=user.created_at.isoformat(),
+            scans_remaining=user.scans_remaining,
+            daily_calorie_goal=user.daily_calorie_goal,
+        ),
+    )
+
+
+@router.post("/google", response_model=AuthResponse)
+def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """Sign in or sign up with a Google ID token."""
+    import httpx
+    from app.config import settings
+
+    # Verify token with Google
+    try:
+        resp = httpx.get(
+            "https://oauth2.googleapis.com/tokeninfo",
+            params={"id_token": request.id_token},
+            timeout=10,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not reach Google verification service",
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google ID token",
+        )
+
+    payload = resp.json()
+
+    # Validate audience if GOOGLE_CLIENT_ID is configured
+    if settings.google_client_id and payload.get("aud") != settings.google_client_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token audience mismatch",
+        )
+
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account has no email address",
+        )
+
+    # Find or create user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # Auto-create account for new Google users
+        user = User(
+            email=email,
+            name=payload.get("name") or email.split("@")[0],
+            hashed_password="google-oauth",  # Sentinel — not a real hash
+            profile_picture_url=payload.get("picture"),
+            scans_remaining=5,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+    return AuthResponse(
+        token=access_token,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            profile_picture_url=user.profile_picture_url,
             created_at=user.created_at.isoformat(),
             scans_remaining=user.scans_remaining,
             daily_calorie_goal=user.daily_calorie_goal,
@@ -488,3 +560,26 @@ def verify_android_purchase(
         scans_remaining=updated_user.scans_remaining,
         daily_calorie_goal=updated_user.daily_calorie_goal,
     )
+
+
+@router.delete("/account")
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete the current user's account and all associated data."""
+    from app.models import MealLog, TokenUsage, PurchaseReceipt, UserFeedback
+
+    user_id = current_user.id
+
+    # Delete all associated data first (FK constraints)
+    db.query(MealLog).filter(MealLog.user_id == user_id).delete()
+    db.query(TokenUsage).filter(TokenUsage.user_id == user_id).delete()
+    db.query(PurchaseReceipt).filter(PurchaseReceipt.user_id == user_id).delete()
+    db.query(UserFeedback).filter(UserFeedback.user_id == user_id).delete()
+
+    # Delete user
+    db.delete(current_user)
+    db.commit()
+
+    return {"status": "ok", "message": "Account and all data deleted"}

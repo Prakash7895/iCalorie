@@ -4,6 +4,7 @@ from sqlalchemy import (
     Integer,
     Float,
     String,
+    Text,
     JSON,
     ForeignKey,
     Boolean,
@@ -82,6 +83,18 @@ class PurchaseReceipt(Base):
     scans_added = Column(Integer, nullable=False)  # Number of scans added
     price_usd = Column(Float, nullable=True)  # Purchase price
     verified_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    user = relationship("User")
+
+
+class UserFeedback(Base):
+    __tablename__ = "user_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     # Relationship
     user = relationship("User")

@@ -40,5 +40,8 @@ class Settings(BaseModel):
     # Free scan limits for non-paying users
     max_free_scans: int = int(os.getenv("MAX_FREE_SCANS", "5"))  # Default: 5 free scans
 
+    # Google OAuth
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+
 
 settings = Settings()

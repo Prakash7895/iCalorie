@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers.scan import router as scan_router
 from app.routers.log import router as log_router
 from app.routers.auth import router as auth_router
+from app.routers.feedback import router as feedback_router
 from app.services.storage import ensure_bucket
 from app.db import init_db
 
@@ -25,6 +26,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(scan_router)
 app.include_router(log_router)
+app.include_router(feedback_router)
 
 
 @app.get("/health")

@@ -141,3 +141,15 @@ export async function getScanPricing(): Promise<PricingInfo> {
   if (!res.ok) throw new Error(`Get pricing failed: ${res.status}`);
   return res.json();
 }
+
+export async function submitFeedback(message: string): Promise<any> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/feedback`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) throw new Error(`Submit feedback failed: ${res.status}`);
+  return res.json();
+}
