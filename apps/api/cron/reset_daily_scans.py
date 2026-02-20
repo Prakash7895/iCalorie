@@ -36,21 +36,25 @@ def reset_all_users_daily_scans():
     print("settings", settings.database_url)
     print("settings", settings)
 
-    engine = create_engine(DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    # engine = create_engine(DATABASE_URL)
+    # Session = sessionmaker(bind=engine)
+    # session = Session()
+
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
 
     try:
         max_free = settings.max_free_scans
 
         # Replenish scans ONLY if current scans_remaining < max_free
-        result = session.execute(
+        result = db.execute(
             text(
                 "UPDATE users SET scans_remaining = :max_free WHERE scans_remaining < :max_free"
             ),
             {"max_free": max_free},
         )
-        session.commit()
+        db.commit()
 
         affected_rows = result.rowcount
         timestamp = datetime.utcnow().isoformat()
@@ -60,11 +64,11 @@ def reset_all_users_daily_scans():
 
         return affected_rows
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(f"❌ Error replenishing daily scans: {e}")
         raise
     finally:
-        session.close()
+        db.close()
 
 
 if __name__ == "__main__":
