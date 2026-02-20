@@ -32,6 +32,10 @@ def reset_all_users_daily_scans():
     """Replenish scans to MAX_FREE_SCANS if current balance is lower."""
     from app.config import settings
 
+    print("DATABASE_URL", DATABASE_URL)
+    print("settings", settings.database_url)
+    print("settings", settings)
+
     engine = create_engine(DATABASE_URL)
     Session = sessionmaker(bind=engine)
     session = Session()
