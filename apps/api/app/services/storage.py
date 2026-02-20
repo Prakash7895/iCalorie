@@ -12,7 +12,7 @@ s3 = boto3.client(
     endpoint_url=settings.s3_endpoint_url,
     aws_access_key_id=settings.s3_access_key,
     aws_secret_access_key=settings.s3_secret_key,
-    region_name="eu-north-1",
+    region_name=settings.s3_region,
     config=Config(
         signature_version="s3v4", connect_timeout=5, retries={"max_attempts": 1}
     ),

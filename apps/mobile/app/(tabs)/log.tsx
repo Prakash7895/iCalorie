@@ -254,7 +254,10 @@ export default function LogScreen() {
                 style={styles.logCard}
                 onPress={() => {
                   if (log.id) {
-                    router.push(`/meal/${log.id}`);
+                    router.push({
+                      pathname: '/meal/[id]',
+                      params: { id: log.id, mealData: JSON.stringify(log) },
+                    });
                   }
                 }}
               >

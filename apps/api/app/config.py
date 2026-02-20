@@ -14,6 +14,7 @@ class Settings(BaseModel):
     s3_access_key: str = os.getenv("S3_ACCESS_KEY", "minio")
     s3_secret_key: str = os.getenv("S3_SECRET_KEY", "minio123")
     s3_bucket: str = os.getenv("S3_BUCKET", "icalorie")
+    s3_region: str = os.getenv("S3_REGION", "us-east-1")
 
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     usda_api_key: str = os.getenv("USDA_API_KEY", "")

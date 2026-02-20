@@ -411,7 +411,12 @@ export default function HomeScreen() {
               >
                 <Pressable
                   style={styles.mealCard}
-                  onPress={() => router.push(`/meal/${meal.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/meal/[id]',
+                      params: { id: meal.id, mealData: JSON.stringify(meal) },
+                    })
+                  }
                 >
                   {meal.photo_url ? (
                     <Image

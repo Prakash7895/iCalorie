@@ -8,7 +8,9 @@ import {
   Dimensions,
   Pressable,
   Alert,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,17 +22,31 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function MealDetailScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColor();
   const styles = createStyles(colors);
 
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [meal, setMeal] = useState<MealLog | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { id, mealData } = useLocalSearchParams<{
+    id: string;
+    mealData?: string;
+  }>();
+  const [meal, setMeal] = useState<MealLog | null>(() => {
+    if (mealData) {
+      try {
+        return JSON.parse(mealData) as MealLog;
+      } catch (e) {
+        console.error('Failed to parse mealData prop', e);
+        return null;
+      }
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(!mealData);
 
   useEffect(() => {
     async function fetchMeal() {
-      if (!id) return;
+      if (!id || meal) return;
       try {
         const data = await getMealLog(id);
         setMeal(data);
@@ -41,7 +57,7 @@ export default function MealDetailScreen() {
       }
     }
     fetchMeal();
-  }, [id]);
+  }, [id, meal]);
 
   const handleDelete = async () => {
     if (!id || !meal) return;
@@ -98,10 +114,7 @@ export default function MealDetailScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: 'Meal Details',
-          headerShown: true,
-          headerTransparent: true,
-          headerTintColor: colors.white,
+          headerShown: false,
         }}
       />
       <ScrollView
@@ -193,15 +206,36 @@ export default function MealDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Close button */}
-      <Pressable style={styles.floatingClose} onPress={() => router.back()}>
-        <Ionicons name='close' size={24} color={colors.white} />
-      </Pressable>
+      {/* Custom Header */}
+      <View
+        style={[
+          styles.customHeader,
+          {
+            paddingTop:
+              Platform.OS === 'android' ? insets.top + 10 : insets.top,
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={15}
+          style={styles.headerBtnLeft}
+        >
+          <Ionicons name='chevron-back' size={28} color={colors.white} />
+        </Pressable>
 
-      {/* Delete button */}
-      <Pressable style={styles.floatingDelete} onPress={handleDelete}>
-        <Ionicons name='trash-outline' size={22} color='#FFF' />
-      </Pressable>
+        <Text style={styles.headerTitleText}>Meal Details</Text>
+
+        <View style={styles.headerRightActions}>
+          <Pressable onPress={handleDelete} hitSlop={15}>
+            <Ionicons name='trash-outline' size={24} color={colors.white} />
+          </Pressable>
+
+          <Pressable onPress={() => router.back()} hitSlop={15}>
+            <Ionicons name='close' size={28} color={colors.white} />
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }
@@ -245,6 +279,37 @@ const createStyles = (colors: any) =>
     },
     scrollContent: {
       paddingBottom: 40,
+    },
+    customHeader: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      zIndex: 100,
+      elevation: 100,
+    },
+    headerBtnLeft: {
+      width: 40,
+      alignItems: 'center',
+      marginLeft: Platform.OS === 'ios' ? 0 : 8,
+    },
+    headerTitleText: {
+      color: colors.white,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    headerRightActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Platform.OS === 'ios' ? 16 : 20,
+      marginRight: Platform.OS === 'ios' ? 0 : 8,
+      width: 60,
+      justifyContent: 'flex-end',
     },
     imageContainer: {
       width: '100%',
