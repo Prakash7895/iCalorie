@@ -6,6 +6,7 @@ from app.db import get_db
 from app.models import MealLog, User
 from sqlalchemy.orm import Session
 from app.services.storage import upload_image
+from app.services.url_helper import get_s3_url
 from datetime import datetime
 from app.routers.auth import get_current_user
 
@@ -59,7 +60,7 @@ async def scan_plate(
     return ScanResponse(
         items=items,
         total_calories=total_calories,
-        photo_url=photo_url,
+        photo_url=get_s3_url(photo_url),
         scans_remaining=current_user.scans_remaining,
         log_id=log.id,
     )

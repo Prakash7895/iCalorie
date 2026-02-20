@@ -12,7 +12,10 @@ s3 = boto3.client(
     endpoint_url=settings.s3_endpoint_url,
     aws_access_key_id=settings.s3_access_key,
     aws_secret_access_key=settings.s3_secret_key,
-    config=Config(connect_timeout=5, retries={"max_attempts": 1}),
+    region_name="eu-north-1",
+    config=Config(
+        signature_version="s3v4", connect_timeout=5, retries={"max_attempts": 1}
+    ),
 )
 
 
@@ -33,6 +36,25 @@ def upload_image(key: str, data: bytes, content_type: str) -> str:
         io.BytesIO(data),
         settings.s3_bucket,
         key,
-        ExtraArgs={"ContentType": content_type, "ACL": "public-read"},
+        ExtraArgs={"ContentType": content_type},
     )
-    return f"{settings.s3_endpoint_url}/{settings.s3_bucket}/{key}"
+    return key
+
+
+def generate_presigned_url(key: str, expiration: int = 3600) -> str:
+    """
+    Generate a presigned URL to share an S3 object securely.
+    :param key: The key of the object to share.
+    :param expiration: Time in seconds for the presigned URL to remain valid.
+    :return: Presigned URL as string.
+    """
+    try:
+        response = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.s3_bucket, "Key": key},
+            ExpiresIn=expiration,
+        )
+    except ClientError as e:
+        logger.error(f"Error generating presigned URL: {e}")
+        return None
+    return response
