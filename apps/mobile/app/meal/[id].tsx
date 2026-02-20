@@ -36,7 +36,7 @@ export default function MealDetailScreen() {
       try {
         return JSON.parse(mealData) as MealLog;
       } catch (e) {
-        console.error('Failed to parse mealData prop', e);
+        console.warn('Failed to parse mealData prop', e);
         return null;
       }
     }
@@ -51,7 +51,7 @@ export default function MealDetailScreen() {
         const data = await getMealLog(id);
         setMeal(data);
       } catch (error) {
-        console.error('Error fetching meal:', error);
+        console.warn('Error fetching meal:', error);
       } finally {
         setLoading(false);
       }

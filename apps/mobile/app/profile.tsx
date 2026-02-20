@@ -69,7 +69,7 @@ export default function ProfileScreen() {
         await storage.setUserData(freshUserData);
       }
     } catch (error) {
-      console.error('Error fetching fresh user data:', error);
+      console.warn('Error fetching fresh user data:', error);
       // Already have cached data displayed, so just log the error
     }
   };
@@ -103,7 +103,7 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'Name updated successfully');
     } catch (error) {
       Alert.alert('Error', 'Failed to update name. Please try again.');
-      console.error(error);
+      console.warn(error);
     }
   };
 
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
       // Revert if failed
       setIsDarkMode(!value);
       Appearance.setColorScheme(!value ? 'dark' : 'light');
-      console.error('Failed to sync dark mode preference:', error);
+      console.warn('Failed to sync dark mode preference:', error);
     }
   };
 
@@ -233,7 +233,7 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'Profile picture updated!');
     } catch (error) {
       Alert.alert('Error', 'Failed to upload profile picture');
-      console.error(error);
+      console.warn(error);
     }
   };
 

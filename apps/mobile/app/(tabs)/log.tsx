@@ -64,7 +64,7 @@ export default function LogScreen() {
         await storage.setUserData(freshUserData);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.warn('Error fetching user data:', error);
     }
   };
 

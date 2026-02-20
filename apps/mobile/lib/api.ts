@@ -49,6 +49,20 @@ export type PricingInfo = {
   packages: TokenPackage[];
 };
 
+async function handleResponse(res: Response, fallbackError: string) {
+  if (!res.ok) {
+    let errorMessage = `${fallbackError}: ${res.status}`;
+    try {
+      const data = await res.json();
+      errorMessage = data.detail || data.message || errorMessage;
+    } catch (e) {
+      // Ignore JSON parse error
+    }
+    throw new Error(errorMessage);
+  }
+  return res.json();
+}
+
 export async function scanImage(
   imageUri: string,
   plateSizeCm?: number
@@ -67,8 +81,7 @@ export async function scanImage(
     method: 'POST',
     body: form,
   });
-  if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Scan failed');
 }
 
 export async function saveLog(payload: LogRequest) {
@@ -79,16 +92,14 @@ export async function saveLog(payload: LogRequest) {
     },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Log failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Log failed');
 }
 
 export async function deleteLog(id: number | string) {
   const res = await authenticatedFetch(`${API_BASE_URL}/log/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error(`Delete log failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Delete log failed');
 }
 
 export async function getLog(date?: string) {
@@ -96,22 +107,19 @@ export async function getLog(date?: string) {
     ? `${API_BASE_URL}/log?date=${encodeURIComponent(date)}`
     : `${API_BASE_URL}/log`;
   const res = await authenticatedFetch(url);
-  if (!res.ok) throw new Error(`Get log failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Get log failed');
 }
 
 export async function getMealLog(id: number | string): Promise<MealLog> {
   const res = await authenticatedFetch(`${API_BASE_URL}/log/${id}`);
-  if (!res.ok) throw new Error(`Get meal log failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Get meal log failed');
 }
 
 export async function getSummary(): Promise<{
   summary: { date: string; total_calories: number }[];
 }> {
   const res = await authenticatedFetch(`${API_BASE_URL}/log/summary`);
-  if (!res.ok) throw new Error(`Get summary failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Get summary failed');
 }
 
 export type ScanBalance = {
@@ -120,8 +128,7 @@ export type ScanBalance = {
 
 export async function getScanBalance(): Promise<ScanBalance> {
   const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens`);
-  if (!res.ok) throw new Error(`Get scan balance failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Get scan balance failed');
 }
 
 export async function purchaseScans(amount: number): Promise<any> {
@@ -132,14 +139,12 @@ export async function purchaseScans(amount: number): Promise<any> {
     },
     body: JSON.stringify({ amount }),
   });
-  if (!res.ok) throw new Error(`Purchase scans failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Purchase scans failed');
 }
 
 export async function getScanPricing(): Promise<PricingInfo> {
   const res = await authenticatedFetch(`${API_BASE_URL}/auth/tokens/pricing`);
-  if (!res.ok) throw new Error(`Get pricing failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Get pricing failed');
 }
 
 export async function submitFeedback(message: string): Promise<any> {
@@ -150,6 +155,5 @@ export async function submitFeedback(message: string): Promise<any> {
     },
     body: JSON.stringify({ message }),
   });
-  if (!res.ok) throw new Error(`Submit feedback failed: ${res.status}`);
-  return res.json();
+  return handleResponse(res, 'Submit feedback failed');
 }

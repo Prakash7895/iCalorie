@@ -105,7 +105,7 @@ export default function HomeScreen() {
         }
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.warn('Error fetching user data:', error);
       // If API fails and we don't have cached data, try storage one more time
       if (!user) {
         const userData = await storage.getUserData();
@@ -166,7 +166,7 @@ export default function HomeScreen() {
       const summary = data.summary || [];
       setWeeklySummary(summary);
     } catch (error) {
-      console.error('Error fetching weekly summary:', error);
+      console.warn('Error fetching weekly summary:', error);
     }
   };
 
@@ -265,7 +265,7 @@ export default function HomeScreen() {
                   fetchWeeklySummary(),
                 ]);
               } catch (error) {
-                console.error('Refresh failed:', error);
+                console.warn('Refresh failed:', error);
               } finally {
                 setLoading(false);
               }

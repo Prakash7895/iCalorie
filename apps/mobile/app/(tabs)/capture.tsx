@@ -38,7 +38,7 @@ export default function CaptureScreen() {
         });
       }
     } catch (error) {
-      console.error('Camera error:', error);
+      console.warn('Camera error:', error);
       alert('Failed to open camera.');
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ export default function CaptureScreen() {
         });
       }
     } catch (error) {
-      console.error('Gallery error:', error);
+      console.warn('Gallery error:', error);
       alert('Failed to open gallery.');
     } finally {
       setLoading(false);
@@ -132,147 +132,148 @@ export default function CaptureScreen() {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.accent,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 16,
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.primary,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  illustration: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 48,
-    position: 'relative',
-  },
-  iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: `${colors.accent}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: `${colors.accent}30`,
-  },
-  cornerTL: {
-    position: 'absolute',
-    top: 0,
-    left: '15%',
-    width: 28,
-    height: 28,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: colors.accent,
-    borderTopLeftRadius: 8,
-  },
-  cornerTR: {
-    position: 'absolute',
-    top: 0,
-    right: '15%',
-    width: 28,
-    height: 28,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderColor: colors.accent,
-    borderTopRightRadius: 8,
-  },
-  cornerBL: {
-    position: 'absolute',
-    bottom: 0,
-    left: '15%',
-    width: 28,
-    height: 28,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: colors.accent,
-    borderBottomLeftRadius: 8,
-  },
-  cornerBR: {
-    position: 'absolute',
-    bottom: 0,
-    right: '15%',
-    width: 28,
-    height: 28,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderColor: colors.accent,
-    borderBottomRightRadius: 8,
-  },
-  actions: {
-    gap: 14,
-    marginBottom: 20,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: colors.accent,
-    paddingVertical: 18,
-    borderRadius: 32,
-    ...SHADOWS.medium,
-  },
-  primaryBtnText: {
-    color: '#FFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: `${colors.accent}15`,
-    paddingVertical: 18,
-    borderRadius: 32,
-    borderWidth: 1.5,
-    borderColor: `${colors.accent}40`,
-  },
-  secondaryBtnText: {
-    color: colors.accent,
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  disabledBtn: {
-    opacity: 0.5,
-  },
-  hint: {
-    color: colors.secondary,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      paddingHorizontal: 24,
+      justifyContent: 'center',
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    badge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.accent,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+      marginBottom: 16,
+    },
+    badgeText: {
+      color: '#FFF',
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 1,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: colors.primary,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: 15,
+      color: colors.secondary,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    illustration: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 48,
+      position: 'relative',
+    },
+    iconCircle: {
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      backgroundColor: `${colors.accent}15`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: `${colors.accent}30`,
+    },
+    cornerTL: {
+      position: 'absolute',
+      top: 0,
+      left: '15%',
+      width: 28,
+      height: 28,
+      borderTopWidth: 3,
+      borderLeftWidth: 3,
+      borderColor: colors.accent,
+      borderTopLeftRadius: 8,
+    },
+    cornerTR: {
+      position: 'absolute',
+      top: 0,
+      right: '15%',
+      width: 28,
+      height: 28,
+      borderTopWidth: 3,
+      borderRightWidth: 3,
+      borderColor: colors.accent,
+      borderTopRightRadius: 8,
+    },
+    cornerBL: {
+      position: 'absolute',
+      bottom: 0,
+      left: '15%',
+      width: 28,
+      height: 28,
+      borderBottomWidth: 3,
+      borderLeftWidth: 3,
+      borderColor: colors.accent,
+      borderBottomLeftRadius: 8,
+    },
+    cornerBR: {
+      position: 'absolute',
+      bottom: 0,
+      right: '15%',
+      width: 28,
+      height: 28,
+      borderBottomWidth: 3,
+      borderRightWidth: 3,
+      borderColor: colors.accent,
+      borderBottomRightRadius: 8,
+    },
+    actions: {
+      gap: 14,
+      marginBottom: 20,
+    },
+    primaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      backgroundColor: colors.accent,
+      paddingVertical: 18,
+      borderRadius: 32,
+      ...SHADOWS.medium,
+    },
+    primaryBtnText: {
+      color: '#FFF',
+      fontSize: 17,
+      fontWeight: '700',
+    },
+    secondaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      backgroundColor: `${colors.accent}15`,
+      paddingVertical: 18,
+      borderRadius: 32,
+      borderWidth: 1.5,
+      borderColor: `${colors.accent}40`,
+    },
+    secondaryBtnText: {
+      color: colors.accent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    disabledBtn: {
+      opacity: 0.5,
+    },
+    hint: {
+      color: colors.secondary,
+      fontSize: 13,
+      textAlign: 'center',
+    },
+  });
