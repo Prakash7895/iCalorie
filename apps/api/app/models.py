@@ -24,6 +24,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     profile_picture_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    dark_mode = Column(Boolean, default=False, server_default="false", nullable=False)
 
     # Scan management
     scans_remaining = Column(

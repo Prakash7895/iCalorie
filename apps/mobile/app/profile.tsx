@@ -8,6 +8,8 @@ import {
   TextInput,
   Alert,
   Image,
+  Switch,
+  Appearance,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +35,7 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [editingGoal, setEditingGoal] = useState(false);
   const [calorieGoal, setCalorieGoal] = useState('2000');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -61,6 +64,7 @@ export default function ProfileScreen() {
         setUser(freshUserData);
         setName(freshUserData?.name || '');
         setCalorieGoal(String(freshUserData?.daily_calorie_goal || 2000));
+        setIsDarkMode(freshUserData?.dark_mode || false);
         // Update storage with fresh data
         await storage.setUserData(freshUserData);
       }
@@ -134,6 +138,39 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'Daily calorie goal updated!');
     } catch (error) {
       Alert.alert('Error', 'Failed to update goal');
+    }
+  };
+
+  const toggleDarkMode = async (value: boolean) => {
+    setIsDarkMode(value);
+
+    // Apply locally
+    Appearance.setColorScheme(value ? 'dark' : 'light');
+
+    // Sync to backend
+    try {
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/auth/profile`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dark_mode: value }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        console.log(updatedUser);
+        await storage.setUserData(updatedUser);
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      // Revert if failed
+      setIsDarkMode(!value);
+      Appearance.setColorScheme(!value ? 'dark' : 'light');
+      console.error('Failed to sync dark mode preference:', error);
     }
   };
 
@@ -378,6 +415,20 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
 
+          <View style={styles.settingCard}>
+            <View style={styles.settingIcon}>
+              <Ionicons name='moon-outline' size={20} color={colors.accent} />
+            </View>
+            <Text style={styles.settingText}>Dark Mode</Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: colors.border, true: colors.accent }}
+              thumbColor={colors.white}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+
           <Pressable
             style={styles.settingCard}
             onPress={() => setShowPasswordModal(true)}
@@ -459,156 +510,169 @@ export default function ProfileScreen() {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  header: {
-    backgroundColor: colors.accent,
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 40,
-    paddingBottom: 100,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  avatarLarge: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.medium,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 60, // Makes the image circular to match avatarLarge
-  },
-  editAvatarBtn: {
-    position: 'absolute',
-    bottom: 0,
-    right: '35%',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.small,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    ...SHADOWS.small,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.accentSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: colors.secondary,
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  input: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    padding: 0,
-  },
-  settingCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...SHADOWS.small,
-  },
-  settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.accentSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  settingText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  logoutBtn: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.error,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    header: {
+      backgroundColor: colors.accent,
+      paddingTop: 50,
+      paddingBottom: 16,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.white,
+    },
+    content: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingTop: 40,
+      paddingBottom: 100,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      marginBottom: 40,
+    },
+    avatarLarge: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: colors.accent,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...SHADOWS.medium,
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 60, // Makes the image circular to match avatarLarge
+    },
+    editAvatarBtn: {
+      position: 'absolute',
+      bottom: 0,
+      right: '35%',
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 12,
+    },
+    infoCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    infoIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.accentSoft,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    infoContent: {
+      flex: 1,
+    },
+    infoLabel: {
+      fontSize: 12,
+      color: colors.secondary,
+      marginBottom: 4,
+    },
+    infoValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    input: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+      padding: 0,
+    },
+    settingCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    settingIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.accentSoft,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    settingText: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    logoutBtn: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: colors.error,
+    },
+    logoutText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.error,
+    },
+  });

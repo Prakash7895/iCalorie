@@ -22,6 +22,7 @@ class UserResponse(BaseModel):
     created_at: str
     scans_remaining: int = 0
     daily_calorie_goal: int = 2000
+    dark_mode: bool = False
 
     class Config:
         from_attributes = True
@@ -44,6 +45,7 @@ class AuthResponse(BaseModel):
 class UpdateProfileRequest(BaseModel):
     name: Optional[str] = None
     daily_calorie_goal: Optional[int] = None
+    dark_mode: Optional[bool] = None
 
 
 class ChangePasswordRequest(BaseModel):

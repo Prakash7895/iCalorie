@@ -69,6 +69,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
             created_at=new_user.created_at.isoformat(),
             scans_remaining=new_user.scans_remaining,
             daily_calorie_goal=new_user.daily_calorie_goal,
+            dark_mode=new_user.dark_mode,
         ),
     )
 
@@ -104,6 +105,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             created_at=user.created_at.isoformat(),
             scans_remaining=user.scans_remaining,
             daily_calorie_goal=user.daily_calorie_goal,
+            dark_mode=user.dark_mode,
         ),
     )
 
@@ -175,6 +177,7 @@ def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
             created_at=user.created_at.isoformat(),
             scans_remaining=user.scans_remaining,
             daily_calorie_goal=user.daily_calorie_goal,
+            dark_mode=user.dark_mode,
         ),
     )
 
@@ -226,6 +229,7 @@ def get_me(
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
         daily_calorie_goal=current_user.daily_calorie_goal,
+        dark_mode=current_user.dark_mode,
     )
 
 
@@ -240,6 +244,8 @@ def update_profile(
         current_user.name = request.name
     if request.daily_calorie_goal is not None:
         current_user.daily_calorie_goal = request.daily_calorie_goal
+    if request.dark_mode is not None:
+        current_user.dark_mode = request.dark_mode
 
     db.commit()
     db.refresh(current_user)
@@ -252,6 +258,7 @@ def update_profile(
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
         daily_calorie_goal=current_user.daily_calorie_goal,
+        dark_mode=current_user.dark_mode,
     )
 
 
@@ -309,6 +316,7 @@ async def upload_profile_picture(
         created_at=current_user.created_at.isoformat(),
         scans_remaining=current_user.scans_remaining,
         daily_calorie_goal=current_user.daily_calorie_goal,
+        dark_mode=current_user.dark_mode,
     )
 
 
@@ -353,6 +361,7 @@ def purchase_tokens(
         created_at=updated_user.created_at.isoformat(),
         scans_remaining=updated_user.scans_remaining,
         daily_calorie_goal=updated_user.daily_calorie_goal,
+        dark_mode=updated_user.dark_mode,
     )
 
 
@@ -559,6 +568,7 @@ def verify_android_purchase(
         created_at=updated_user.created_at.isoformat(),
         scans_remaining=updated_user.scans_remaining,
         daily_calorie_goal=updated_user.daily_calorie_goal,
+        dark_mode=updated_user.dark_mode,
     )
 
 
