@@ -6,7 +6,6 @@ load_dotenv()
 
 
 class Settings(BaseModel):
-    api_base_url: str = os.getenv("API_BASE_URL", "http://localhost:8000")
     database_url: str = os.getenv(
         "DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/icalorie"
     )
