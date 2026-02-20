@@ -3,8 +3,8 @@ FROM python:3.11-slim
 # Set the working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Since Railway is building from the root of your repository, we need to copy from apps/api
+COPY apps/api/requirements.txt .
 
 # Install dependencies (plus some basic build tools if needed for cryptography/psycopg2)
 RUN apt-get update && apt-get install -y \
@@ -15,8 +15,8 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
-COPY . .
+# Copy the rest of the API application code
+COPY apps/api/ .
 
 # Expose the port that the app runs on
 EXPOSE 8000
