@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -113,7 +113,12 @@ export default function MealDetailScreen() {
           style={styles.imageContainer}
         >
           {meal.photo_url ? (
-            <Image source={{ uri: meal.photo_url }} style={styles.image} />
+            <Image
+              source={{ uri: meal.photo_url }}
+              style={styles.image}
+              transition={200}
+              cachePolicy='memory-disk'
+            />
           ) : (
             <View style={styles.placeholderImage}>
               <Ionicons

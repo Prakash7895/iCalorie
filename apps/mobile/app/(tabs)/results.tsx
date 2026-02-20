@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -209,7 +209,12 @@ export default function ResultsScreen() {
         >
           {hasImage ? (
             <View style={styles.imageWrapper}>
-              <Image source={{ uri: imageUri }} style={styles.image} />
+              <Image
+                source={{ uri: imageUri }}
+                style={styles.image}
+                transition={200}
+                cachePolicy='memory-disk'
+              />
 
               {/* Scanning Overlay */}
               {loading && (

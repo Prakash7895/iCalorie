@@ -8,9 +8,9 @@ import {
   StyleSheet,
   Text,
   View,
-  Image,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -305,6 +305,8 @@ export default function LogScreen() {
                     <Image
                       source={{ uri: log.photo_url }}
                       style={styles.mealThumbnail}
+                      transition={200}
+                      cachePolicy='memory-disk'
                     />
                   )}
                 </View>

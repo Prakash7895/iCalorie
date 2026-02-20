@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -138,6 +139,8 @@ const HomeHeader = memo(
                   <Image
                     source={{ uri: user.profile_picture_url }}
                     style={styles.avatarImage}
+                    transition={200}
+                    cachePolicy='memory-disk'
                   />
                 ) : (
                   <Ionicons name='person' size={24} color={colors.white} />

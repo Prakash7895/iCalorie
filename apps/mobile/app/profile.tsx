@@ -7,10 +7,10 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Image,
   Switch,
   Appearance,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -299,6 +299,8 @@ export default function ProfileScreen() {
               <Image
                 source={{ uri: user.profile_picture_url }}
                 style={styles.avatarImage}
+                transition={200}
+                cachePolicy='memory-disk'
               />
             ) : (
               <Ionicons name='person' size={64} color={colors.white} />

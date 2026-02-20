@@ -1,3 +1,4 @@
+from app.services.url_helper import get_s3_url
 from fastapi import APIRouter, Depends
 from typing import Optional
 from datetime import datetime
@@ -65,7 +66,7 @@ async def get_log(
                 "id": row.id,
                 "items": row.items or [],
                 "total_calories": row.total_calories,
-                "photo_url": row.photo_url,
+                "photo_url": get_s3_url(row.photo_url),
                 "plate_size_cm": row.plate_size_cm,
                 "created_at": row.created_at.isoformat(),
             }
@@ -152,7 +153,7 @@ async def get_meal_log(
         "id": log.id,
         "items": log.items or [],
         "total_calories": log.total_calories,
-        "photo_url": log.photo_url,
+        "photo_url": get_s3_url(log.photo_url),
         "plate_size_cm": log.plate_size_cm,
         "created_at": log.created_at.isoformat(),
     }

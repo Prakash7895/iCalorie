@@ -57,8 +57,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f8468502-75c0-42ea-b282-bb3af7a68235"
+        "projectId": "20771324-353a-4067-9814-ee3b34ebffc1"
       }
-    }
+    },
+    "owner": "rpapps25"
   }
 }

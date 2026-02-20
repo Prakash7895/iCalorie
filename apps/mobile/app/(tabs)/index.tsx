@@ -6,11 +6,11 @@ import {
   View,
   RefreshControl,
   Pressable,
-  Image,
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -417,6 +417,8 @@ export default function HomeScreen() {
                     <Image
                       source={{ uri: meal.photo_url }}
                       style={styles.mealThumbnail}
+                      transition={200}
+                      cachePolicy='memory-disk'
                     />
                   ) : (
                     <View style={styles.mealIcon}>
