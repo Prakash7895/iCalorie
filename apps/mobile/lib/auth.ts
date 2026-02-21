@@ -75,6 +75,7 @@ export const auth = {
       },
       body: JSON.stringify({ email, password, name }),
     });
+    console.log(response);
 
     if (!response.ok) {
       const error = await response
